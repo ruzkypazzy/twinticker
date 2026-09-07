@@ -1,36 +1,78 @@
 // Reader agent — pulls on-chain + off-chain data for a single Ondo tokenized US stock.
 //
-// On a real deploy with the binance-agentic-wallet skill + binance-tokenized-securities-info
-// skill, this would call those MCP skills. For the hackathon demo, we use a curated
-// set of well-known Ondo Global Markets tokens and a free public US-equity price feed.
+// On-chain: calls the OFFICIAL binance-tokenized-securities-info REST API
+//   (https://www.binance.com/bapi/defi/v1/.../rwa/...) — the same endpoints
+//   the binance-tokenized-securities-info skill wraps. The full SKILL.md
+//   for that skill is vendored in skills/binance-web3/SKILL.tokenized-securities.md.
+//
+// Off-chain: free public US-equity price feed (Yahoo → Stooq → curated fallback).
+//
+// Both paths are best-effort with graceful fallback. If the on-chain API is
+// unreachable, the agent returns NO_DATA so the verdict engine can surface it
+// rather than fabricate a price.
 
 import { fetch } from 'undici';
 
-// Curated Ondo Global Markets (BNB Chain) tokenized US stocks as of 2026-09-08.
-// Each entry: chain ticker, BNB Chain contract (placeholder — real list queried at runtime
-// from the binance-tokenized-securities-info skill), sharesMultiplier, display name.
-const ONDO_TOKENS = {
-  NVDA:  { name: 'Nvidia Corporation',            multiplier: 1.0,  chain: 'BSC' },
-  TSLA:  { name: 'Tesla, Inc.',                  multiplier: 1.0,  chain: 'BSC' },
-  AAPL:  { name: 'Apple Inc.',                   multiplier: 1.0,  chain: 'BSC' },
-  MSFT:  { name: 'Microsoft Corporation',        multiplier: 1.0,  chain: 'BSC' },
-  GOOGL: { name: 'Alphabet Inc. Class A',        multiplier: 1.0,  chain: 'BSC' },
-  AMZN:  { name: 'Amazon.com, Inc.',             multiplier: 1.0,  chain: 'BSC' },
-  META:  { name: 'Meta Platforms, Inc.',         multiplier: 1.0,  chain: 'BSC' },
-  JPM:   { name: 'JPMorgan Chase & Co.',         multiplier: 1.0,  chain: 'BSC' },
-  SPY:   { name: 'SPDR S&P 500 ETF Trust',       multiplier: 0.1,  chain: 'BSC' },
-  QQQ:   { name: 'Invesco QQQ Trust',            multiplier: 0.1,  chain: 'BSC' },
+// ============================================================================
+// 1) ON-CHAIN: binance-tokenized-securities-info (vendored from
+//    binance/binance-skills-hub). Public, no auth, no API key.
+// ============================================================================
+
+const BINANCE_HEADERS = {
+  'Accept-Encoding': 'identity',
+  'User-Agent': 'twinticker/0.1 (Binance-Agent-OS-Hackathon)',
 };
 
-// Free public US-equity price endpoint. We try Yahoo Finance's public quote
-// endpoint first (no auth, returns JSON), then fall back to a curated set of
-// realistic current prices (clearly labeled 'fallback') if all live sources
-// fail. The fallback keeps the demo demonstrable even when third-party APIs
-// are blocked from Vercel's IP.
+async function fetchOndoTokenList(chainId = '56', type = 1) {
+  const url = `https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=${type}`;
+  const res = await fetch(url, { headers: BINANCE_HEADERS, signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) throw new Error(`token list HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.code !== '000000') throw new Error(`token list code ${json.code}`);
+  return json.data || [];
+}
+
+async function fetchOndoDynamic(chainId, contractAddress) {
+  const url = `https://www.binance.com/bapi/defi/v2/public/wallet-direct/buw/wallet/market/token/rwa/dynamic/ai?chainId=${chainId}&contractAddress=${contractAddress}`;
+  const res = await fetch(url, { headers: BINANCE_HEADERS, signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) throw new Error(`rwa dynamic HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.code !== '000000') throw new Error(`rwa dynamic code ${json.code}`);
+  return json.data;
+}
+
+async function fetchOndoMarketStatus() {
+  const url = `https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/market/status/ai`;
+  const res = await fetch(url, { headers: BINANCE_HEADERS, signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) throw new Error(`market status HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.code !== '000000') throw new Error(`market status code ${json.code}`);
+  return json.data;
+}
+
+// Resolve a ticker (e.g. "NVDA") to a BSC Ondo token entry. Memoizes the
+// list for 5 minutes to avoid hammering the API.
+let _tokenListCache = { at: 0, data: null };
+const TOKEN_LIST_TTL_MS = 5 * 60 * 1000;
+
+async function resolveTickerToToken(ticker, chainId = '56') {
+  if (!_tokenListCache.data || Date.now() - _tokenListCache.at > TOKEN_LIST_TTL_MS) {
+    _tokenListCache = { at: Date.now(), data: await fetchOndoTokenList(chainId, 1) };
+  }
+  const upper = ticker.toUpperCase();
+  // The Ondo API field is `ticker` (the underlying US stock ticker).
+  return _tokenListCache.data.find((t) => (t.ticker || '').toUpperCase() === upper && String(t.chainId) === String(chainId))
+    || _tokenListCache.data.find((t) => (t.ticker || '').toUpperCase() === upper);
+}
+
+// ============================================================================
+// 2) OFF-CHAIN: US equity price (Yahoo → Stooq → curated fallback)
+// ============================================================================
+
 async function fetchUsStockPrice(symbol) {
-  // Try Yahoo Finance public quote endpoint
-  const yahooUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`;
+  // Yahoo Finance public quote (no auth, returns JSON)
   try {
+    const yahooUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`;
     const res = await fetch(yahooUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; twinticker/0.1)' },
       signal: AbortSignal.timeout(6000),
@@ -49,9 +91,9 @@ async function fetchUsStockPrice(symbol) {
     }
   } catch (_) { /* fall through */ }
 
-  // Try Stooq as a secondary source
-  const stooqUrl = `https://stooq.com/q/l/?s=${symbol.toLowerCase()}.us&f=sd2t2ohlcv&h&e=csv`;
+  // Stooq CSV fallback
   try {
+    const stooqUrl = `https://stooq.com/q/l/?s=${symbol.toLowerCase()}.us&f=sd2t2ohlcv&h&e=csv`;
     const res = await fetch(stooqUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; twinticker/0.1)' },
       signal: AbortSignal.timeout(6000),
@@ -65,19 +107,13 @@ async function fetchUsStockPrice(symbol) {
         const row = Object.fromEntries(headers.map((h, i) => [h.toLowerCase(), values[i]]));
         const close = Number(row.close);
         if (Number.isFinite(close) && close > 0) {
-          return {
-            price: close,
-            currency: 'USD',
-            asOf: `${row.date} ${row.time}`,
-            source: 'stooq',
-          };
+          return { price: close, currency: 'USD', asOf: `${row.date} ${row.time}`, source: 'stooq' };
         }
       }
     }
   } catch (_) { /* fall through */ }
 
-  // Fallback: curated realistic prices as of early Sept 2026
-  // (clearly tagged so judges see the source is fallback)
+  // Curated realistic fallback (clearly tagged)
   const FALLBACK = {
     NVDA:  178.42, TSLA:  245.18, AAPL:  226.45, MSFT:  418.92,
     GOOGL: 167.34, AMZN:  189.21, META:  512.07, JPM:   218.45,
@@ -90,82 +126,82 @@ async function fetchUsStockPrice(symbol) {
       currency: 'USD',
       asOf: new Date().toISOString(),
       source: 'fallback-curated',
-      note: 'All live US-equity feeds blocked from this environment. Using curated fallback so the agent still demonstrates the verdict logic.',
+      note: 'All live US-equity feeds blocked from this environment. Using curated fallback.',
     };
   }
-
-  return {
-    price: null,
-    currency: 'USD',
-    asOf: new Date().toISOString(),
-    source: 'no-data',
-    error: 'No price available from any source',
-  };
+  return { price: null, currency: 'USD', asOf: new Date().toISOString(), source: 'no-data' };
 }
 
-// Fetch the on-chain tokenized stock price from the Binance Skills Hub
-// (binance-tokenized-securities-info). For the live demo this queries the
-// real skill via the Binance MCP server. For the demo environment we use
-// a deterministic, symbol-keyed spread on top of the reference price so
-// the divergence logic produces visible, reproducible verdicts.
-async function fetchOnchainTokenPrice(symbol, referencePrice) {
-  const token = ONDO_TOKENS[symbol];
-  if (!token) {
-    return { error: `Unknown Ondo symbol: ${symbol}`, supportedSymbols: Object.keys(ONDO_TOKENS) };
-  }
-  // In production this calls the binance-tokenized-securities-info skill:
-  //   const r = await binanceMcp.call('tokenized_securities', { symbol, chain: token.chain });
-  //   return { price: Number(r.price), status: r.status, holders: r.holders, ... };
-  //
-  // Demo spread (bps, deterministic per symbol — different for each so the
-  // scan_all grid shows variety): NVDA -85, TSLA +120, AAPL -32, MSFT +18,
-  // GOOGL -75, AMZN +210, META -45, JPM +12, SPY -8, QQQ +95
-  const DEMO_SPREAD_BPS = {
-    NVDA: -85, TSLA: 120, AAPL: -32, MSFT: 18, GOOGL: -75,
-    AMZN: 210, META: -45, JPM:  12, SPY:  -8, QQQ:  95,
-  };
-  const spreadBps = DEMO_SPREAD_BPS[symbol] ?? 0;
-  // observedPrice is the on-chain TOKEN price. Token = share_price * multiplier.
-  // We apply the demo spread to the token price so SPY (mult=0.1) and QQQ
-  // (mult=0.1) show realistic small per-token prices.
-  const observedPrice = referencePrice != null
-    ? referencePrice * token.multiplier * (1 + spreadBps / 10000)
-    : null;
-  return {
-    symbol,
-    name: token.name,
-    chain: token.chain,
-    multiplier: token.multiplier,
-    observedPrice: observedPrice != null ? Number(observedPrice.toFixed(4)) : null,
-    spreadBps,
-    source: 'demo-baseline',
-    note: 'Live integration uses binance-tokenized-securities-info skill via Binance MCP. Demo uses a deterministic spread so the verdict logic is observable.',
-  };
-}
+// ============================================================================
+// Public API
+// ============================================================================
 
 export async function runReader(symbol) {
   const upper = symbol.toUpperCase();
-  const token = ONDO_TOKENS[upper];
-  if (!token) {
-    return {
-      symbol: upper,
-      error: 'unsupported_symbol',
-      supported: Object.keys(ONDO_TOKENS),
-    };
+
+  // 1) Resolve ticker → Ondo contract (via official binance-tokenized-securities-info)
+  let tokenInfo = null;
+  let resolutionError = null;
+  try {
+    tokenInfo = await resolveTickerToToken(upper, '56');
+  } catch (err) {
+    resolutionError = err.message;
   }
 
+  // 2) Pull live on-chain dynamic data if we have a contract
+  let onchainDynamic = null;
+  let onchainDynamicError = null;
+  if (tokenInfo) {
+    try {
+      onchainDynamic = await fetchOndoDynamic(tokenInfo.chainId, tokenInfo.contractAddress);
+    } catch (err) {
+      onchainDynamicError = err.message;
+    }
+  }
+
+  // 3) Pull the market status (for HALTED detection)
+  let marketStatus = null;
+  try {
+    marketStatus = await fetchOndoMarketStatus();
+  } catch (_) { /* non-fatal */ }
+
+  // 4) Pull the underlying US equity price
   const usStock = await fetchUsStockPrice(upper);
-  const onchain = await fetchOnchainTokenPrice(upper, usStock.price);
+
+  // 5) Compose the response
+  const onchain = {
+    source: 'binance-tokenized-securities-info',
+    note: 'Vendored from binance/binance-skills-hub. See skills/binance-web3/SKILL.tokenized-securities.md.',
+    contractAddress: tokenInfo?.contractAddress || null,
+    chainId: tokenInfo?.chainId || '56',
+    tokenSymbol: tokenInfo?.symbol || null,
+    observedPrice: onchainDynamic?.tokenInfo?.price != null
+      ? Number(onchainDynamic.tokenInfo.price) : null,
+    priceChangePct24h: onchainDynamic?.tokenInfo?.priceChangePct24h != null
+      ? Number(onchainDynamic.tokenInfo.priceChangePct24h) : null,
+    totalHolders: onchainDynamic?.tokenInfo?.totalHolders != null
+      ? Number(onchainDynamic.tokenInfo.totalHolders) : null,
+    marketCap: onchainDynamic?.tokenInfo?.marketCap || null,
+    volume24hUsd: onchainDynamic?.tokenInfo?.volume24h || null,
+    sharesMultiplier: onchainDynamic?.tokenInfo?.sharesMultiplier != null
+      ? Number(onchainDynamic.tokenInfo.sharesMultiplier) : null,
+    statusInfo: onchainDynamic?.statusInfo || null,
+    stockInfo: onchainDynamic?.stockInfo || null,
+    resolutionError,
+    dynamicError: onchainDynamicError,
+  };
 
   return {
     symbol: upper,
-    name: token.name,
-    chain: token.chain,
-    multiplier: token.multiplier,
+    name: tokenInfo?.symbol || upper,
+    chain: tokenInfo?.chainId || 'BSC',
+    multiplier: onchain.sharesMultiplier || (tokenInfo?.multiplier ? Number(tokenInfo.multiplier) : 1),
+    contractAddress: tokenInfo?.contractAddress || null,
     fetchedAt: new Date().toISOString(),
     usStock,
     onchain,
+    marketStatus,
   };
 }
 
-export { ONDO_TOKENS };
+export { fetchOndoTokenList, fetchOndoDynamic, fetchOndoMarketStatus };
