@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TWINTICKER — Two tickers, one truth</title>
+<meta name="description" content="TWINTICKER detects divergence between Ondo tokenized US stocks on BNB Chain and their underlying US equity prices. Built on Binance Agent OS." />
+<meta property="og:title" content="TWINTICKER — Two tickers, one truth" />
+<meta property="og:description" content="AI agent that watches Ondo tokenized US stocks on BNB Chain vs the underlying equity. Built for the Binance Agent OS Mini Hackathon." />
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #121829;
+    --panel2: #1a2138;
+    --border: #243049;
+    --text: #e6ecf5;
+    --muted: #8a96b3;
+    --accent: #f0b90b; /* Binance yellow */
+    --accent2: #00d4a8;
+    --danger: #ff4d6d;
+    --ok: #00d4a8;
+    --warn: #ffaa3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: radial-gradient(ellipse at top, #14213d 0%, var(--bg) 60%);
+    color: var(--text); min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10, 14, 26, 0.7); backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent) 0%, #d4951a 100%);
+    display: grid; place-items: center; font-weight: 800; color: #0a0e1a;
+    font-size: 18px; letter-spacing: -1px;
+  }
+  h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+  .tag { color: var(--muted); font-size: 13px; }
+  .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px;
+    background: rgba(240, 185, 11, 0.12); color: var(--accent);
+    border: 1px solid rgba(240, 185, 11, 0.3);
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero h2 {
+    font-size: 42px; font-weight: 800; margin: 0 0 12px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: -1.5px;
+  }
+  .hero p { color: var(--muted); margin: 0; font-size: 16px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px; margin-bottom: 24px;
+  }
+  .symbol-input {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .symbol-input input {
+    flex: 1; min-width: 200px; padding: 12px 16px; border-radius: 8px;
+    background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-size: 16px; font-family: inherit;
+  }
+  .symbol-input input:focus { outline: none; border-color: var(--accent); }
+  .btn {
+    padding: 12px 20px; border-radius: 8px; border: none;
+    background: var(--accent); color: #0a0e1a; font-weight: 700; cursor: pointer;
+    font-size: 14px; transition: transform 0.1s, opacity 0.1s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .chip {
+    padding: 6px 12px; border-radius: 999px; background: var(--panel2);
+    border: 1px solid var(--border); cursor: pointer; font-size: 12px;
+    color: var(--muted); transition: all 0.15s;
+  }
+  .chip:hover { color: var(--accent); border-color: var(--accent); }
+  .verdict {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px;
+  }
+  .v-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+  .v-symbol { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .v-name { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .v-pill {
+    padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .v-pill.FAIR_VALUE { background: rgba(0, 212, 168, 0.15); color: var(--ok); border: 1px solid var(--ok); }
+  .v-pill.UNDERVALUED { background: rgba(0, 212, 168, 0.15); color: var(--ok); border: 1px solid var(--ok); }
+  .v-pill.OVERVALUED  { background: rgba(255, 77, 109, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+  .v-pill.NO_DATA     { background: rgba(138, 150, 179, 0.15); color: var(--muted); border: 1px solid var(--muted); }
+  .v-pill.HALTED      { background: rgba(255, 170, 59, 0.15); color: var(--warn); border: 1px solid var(--warn); }
+  .metric { display: flex; flex-direction: column; gap: 4px; }
+  .metric .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+  .metric .val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rationale {
+    grid-column: 1 / -1; padding: 16px; background: var(--bg);
+    border-left: 3px solid var(--accent); border-radius: 6px;
+    color: var(--text); font-size: 14px; line-height: 1.6;
+  }
+  .src { grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
+  .grid-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .row {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .row:hover { border-color: var(--accent); }
+  .row .r-sym { font-weight: 800; font-size: 16px; }
+  .row .r-div { font-variant-numeric: tabular-nums; font-size: 14px; margin-top: 4px; }
+  .row .r-verdict { font-size: 11px; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px; }
+  footer { text-align: center; color: var(--muted); padding: 40px 0; font-size: 12px; }
+  footer a { color: var(--accent); text-decoration: none; }
+  .stack { font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
+  .err { color: var(--danger); }
+  code { background: var(--panel2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  @media (max-width: 640px) {
+    .verdict { grid-template-columns: 1fr; }
+    .hero h2 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">TT</div>
+    <div>
+      <h1>TWINTICKER</h1>
+      <div class="tag">Two tickers, one truth.</div>
+    </div>
+  </div>
+  <div>
+    <span class="badge">Binance Agent OS · Track A</span>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h2>Watch Ondo tokenized US stocks.<br />On BNB Chain. Live.</h2>
+    <p>Detects divergence between on-chain tokenized equities and the underlying US stocks. Powered by <code>binance-tokenized-securities-info</code> + live US equity feed + GPT-4o-mini.</p>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">Scan a symbol</h3>
+    <div class="symbol-input">
+      <input id="sym" type="text" placeholder="NVDA, TSLA, AAPL, MSFT, GOOGL, AMZN, META, JPM…" value="NVDA" />
+      <button class="btn" id="scan-btn">Scan</button>
+      <button class="btn btn-ghost" id="scan-all-btn">Scan all</button>
+    </div>
+    <div class="chips">
+      <span class="chip" data-sym="NVDA">NVDA</span>
+      <span class="chip" data-sym="TSLA">TSLA</span>
+      <span class="chip" data-sym="AAPL">AAPL</span>
+      <span class="chip" data-sym="MSFT">MSFT</span>
+      <span class="chip" data-sym="GOOGL">GOOGL</span>
+      <span class="chip" data-sym="AMZN">AMZN</span>
+      <span class="chip" data-sym="META">META</span>
+      <span class="chip" data-sym="JPM">JPM</span>
+      <span class="chip" data-sym="SPY">SPY</span>
+      <span class="chip" data-sym="QQQ">QQQ</span>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <div class="panel" id="all-panel" style="display:none">
+    <h3 style="margin-top:0">All tokenized US stocks — ranked by divergence</h3>
+    <div class="grid-results" id="all-grid"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">How it works</h3>
+    <p style="color:var(--muted); line-height:1.7; font-size:14px">
+      TWINTICKER runs three agents: a <b>Reader</b> that pulls on-chain token data via
+      <code>binance-tokenized-securities-info</code> and the underlying US equity price
+      from a free public feed; an <b>Analyzer</b> that computes the divergence in basis
+      points, applies the Ondo <code>multiplier</code>, and produces a verdict
+      (FAIR_VALUE / UNDERVALUED / OVERVALUED / HALTED); and a <b>Scanner</b> that runs
+      the whole pipeline across the full Ondo universe and ranks by absolute divergence.
+      The MCP server exposes both <code>twinticker_scan</code> and
+      <code>twinticker_scan_all</code> to any MCP-compatible agent — Claude Code, Codex,
+      Cursor, ChatGPT. Built for the Binance Agent OS Mini Hackathon.
+    </p>
+  </div>
+</main>
+<footer>
+  Built by <a href="https://github.com/ruzkypazzy" target="_blank" rel="noopener">@ruzkypazzy</a>
+  · <a href="https://github.com/ruzkypazzy/twinticker" target="_blank" rel="noopener">GitHub</a>
+  · <a href="/mcp" target="_blank" rel="noopener">MCP endpoint</a>
+  · <a href="/health" target="_blank" rel="noopener">/health</a>
+</footer>
+<script>
+const $ = (s) => document.querySelector(s);
+const result = $('#result');
+const allPanel = $('#all-panel');
+const allGrid = $('#all-grid');
+
+async function scan(symbol) {
+  result.innerHTML = '<div class="panel" style="background:var(--panel2)">Scanning ' + symbol + '…</div>';
+  try {
+    const r = await fetch('/api/scan/' + encodeURIComponent(symbol));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    renderVerdict(d);
+  } catch (e) {
+    result.innerHTML = '<div class="err">Error: ' + e.message + '</div>';
+  }
+}
+
+function renderVerdict(d) {
+  const div = d.divergenceBps;
+  const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(1) + ' bps';
+  const divClass = div != null && Math.abs(div) < 50 ? 'ok' : (div != null && div < 0 ? 'ok' : '');
+  const pill = (d.verdict || 'NO_DATA').replace('_', ' ');
+  result.innerHTML = `
+    <div class="verdict">
+      <div class="v-head">
+        <div>
+          <div class="v-symbol">${d.symbol}</div>
+          <div class="v-name">${d.name || ''} · ${d.chain || ''} chain · multiplier ${d.multiplier || 1}</div>
+        </div>
+        <div class="v-pill ${d.verdict}">${pill}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Divergence</div>
+        <div class="val">${divStr}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Action</div>
+        <div class="val">${d.action || '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Fair value (ref)</div>
+        <div class="val">$${d.fairValue != null ? d.fairValue.toFixed(2) : '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">On-chain observed</div>
+        <div class="val">$${d.observedPrice != null ? d.observedPrice.toFixed(2) : '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Confidence</div>
+        <div class="val">${d.confidence || '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Fetched</div>
+        <div class="val" style="font-size:14px">${d.fetchedAt ? new Date(d.fetchedAt).toLocaleTimeString() : '—'}</div>
+      </div>
+      <div class="rationale">${d.rationale || ''}</div>
+      <div class="src">US source: <code>${d.usStock?.source || '—'}</code> · On-chain source: <code>${d.onchain?.source || '—'}</code></div>
+    </div>`;
+}
+
+async function scanAll() {
+  allPanel.style.display = 'block';
+  allGrid.innerHTML = '<div style="color:var(--muted)">Scanning all 10 Ondo tokens…</div>';
+  try {
+    const r = await fetch('/api/scan-all');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    allGrid.innerHTML = d.results.map((x) => {
+      const div = x.divergenceBps;
+      const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(1);
+      return `
+        <div class="row" data-sym="${x.symbol}">
+          <div class="r-sym">${x.symbol}</div>
+          <div class="r-div">${divStr} bps</div>
+          <div class="r-verdict" style="color:${(x.verdict === 'UNDERVALUED' || x.verdict === 'FAIR_VALUE') ? 'var(--ok)' : (x.verdict === 'OVERVALUED' ? 'var(--danger)' : 'var(--muted)')}">${(x.verdict || 'NO_DATA').replace('_', ' ')}</div>
+        </div>`;
+    }).join('');
+    allGrid.querySelectorAll('.row').forEach((r) => {
+      r.addEventListener('click', () => scan(r.dataset.sym));
+    });
+  } catch (e) {
+    allGrid.innerHTML = '<div class="err">Error: ' + e.message + '</div>';
+  }
+}
+
+$('#scan-btn').addEventListener('click', () => scan($('#sym').value.trim()));
+$('#sym').addEventListener('keydown', (e) => { if (e.key === 'Enter') scan($('#sym').value.trim()); });
+$('#scan-all-btn').addEventListener('click', scanAll);
+document.querySelectorAll('.chip').forEach((c) => {
+  c.addEventListener('click', () => { $('#sym').value = c.dataset.sym; scan(c.dataset.sym); });
+});
+
+// Auto-scan NVDA on load
+scan('NVDA');
+</script>
+</body>
+</html>
