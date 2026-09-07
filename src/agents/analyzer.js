@@ -32,7 +32,11 @@ function computeVerdict(reader) {
     };
   }
 
-  const referencePrice = ref / mult;
+  // multiplier semantics: each token represents `multiplier` shares.
+  // If multiplier=1, token price should equal share price. If multiplier=0.1
+  // (SPY, QQQ), token price should be 0.1x the share price.
+  // So fair reference price per token = share_price * multiplier.
+  const referencePrice = ref * mult;
   const divergenceBps = ((obs - referencePrice) / referencePrice) * 10000;
   const absDiv = Math.abs(divergenceBps);
 

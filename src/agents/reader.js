@@ -125,8 +125,11 @@ async function fetchOnchainTokenPrice(symbol, referencePrice) {
     AMZN: 210, META: -45, JPM:  12, SPY:  -8, QQQ:  95,
   };
   const spreadBps = DEMO_SPREAD_BPS[symbol] ?? 0;
+  // observedPrice is the on-chain TOKEN price. Token = share_price * multiplier.
+  // We apply the demo spread to the token price so SPY (mult=0.1) and QQQ
+  // (mult=0.1) show realistic small per-token prices.
   const observedPrice = referencePrice != null
-    ? referencePrice * (1 + spreadBps / 10000)
+    ? referencePrice * token.multiplier * (1 + spreadBps / 10000)
     : null;
   return {
     symbol,
