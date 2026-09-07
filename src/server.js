@@ -11,6 +11,7 @@ import { dirname, join } from 'path';
 import { runReader } from './agents/reader.js';
 import { runAnalyzer } from './agents/analyzer.js';
 import { scanAll } from './agents/scanner.js';
+import { runExecutor } from './agents/executor.js';
 import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,6 +106,19 @@ fastify.post('/mcp', async (req, reply) => {
             description: 'Scan all available Ondo tokenized US stocks. Returns ranked list by absolute divergence.',
             inputSchema: { type: 'object', properties: {} },
           },
+          {
+            name: 'twinticker_execute',
+            description: 'OPTIONAL: Execute a swap via the Binance Agentic Wallet (baw CLI) into the Ondo tokenized stock. Disabled by default. Requires BAW_ENABLED=true and confirm:true.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                symbol: { type: 'string', description: 'Ticker symbol' },
+                amount_usdt: { type: 'number', description: 'USDT amount to swap (capped at $5 by default)' },
+                confirm: { type: 'boolean', description: 'Must be true to execute. Dry-run if false or missing.' },
+              },
+              required: ['symbol', 'amount_usdt', 'confirm'],
+            },
+          },
         ],
       },
     };
@@ -121,6 +135,12 @@ fastify.post('/mcp', async (req, reply) => {
       } else if (name === 'twinticker_scan_all') {
         const items = await scanAll();
         result = { count: items.length, results: items };
+      } else if (name === 'twinticker_execute') {
+        result = await runExecutor({
+          symbol: args?.symbol,
+          amount_usdt: Number(args?.amount_usdt),
+          confirm: args?.confirm === true,
+        });
       } else {
         return { jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } };
       }
