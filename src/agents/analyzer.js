@@ -13,12 +13,13 @@ function getClient() {
 }
 
 // Compute the verdict deterministically. We treat the US stock price as the
-// reference (fair value) and the on-chain token price as observed. In a real
-// integration the on-chain price comes from the binance-tokenized-securities-info
-// skill; in demo mode we use the US price as the baseline.
+// reference (fair value) and the on-chain token price as observed. The on-chain
+// price comes from the binance-tokenized-securities-info skill in production;
+// in demo mode the Reader applies a deterministic spread so the verdict logic
+// is observable.
 function computeVerdict(reader) {
   const ref = reader.usStock?.price;
-  const obs = reader.usStock?.price; // demo: baseline = US price. Real: on-chain token price
+  const obs = reader.onchain?.observedPrice ?? null;
   const mult = reader.multiplier || 1;
 
   if (ref == null || obs == null) {
@@ -31,9 +32,6 @@ function computeVerdict(reader) {
     };
   }
 
-  // In demo mode, divergence is 0 because the on-chain price is the baseline.
-  // The real integration will read on-chain price from the Binance skill and
-  // divergence will be non-zero whenever the two diverge.
   const referencePrice = ref / mult;
   const divergenceBps = ((obs - referencePrice) / referencePrice) * 10000;
   const absDiv = Math.abs(divergenceBps);
@@ -93,6 +91,7 @@ async function writeRationale(reader, verdict) {
             symbol: reader.symbol,
             name: reader.name,
             verdict: verdict.verdict,
+            action: verdict.action,
             divergenceBps: verdict.divergenceBps,
             fairValue: verdict.fairValue,
             observed: verdict.observedPrice,
@@ -100,6 +99,7 @@ async function writeRationale(reader, verdict) {
             chain: reader.chain,
             usSource: reader.usStock?.source,
             onchainSource: reader.onchain?.source,
+            onchainSpreadBps: reader.onchain?.spreadBps,
           }),
         },
       ],

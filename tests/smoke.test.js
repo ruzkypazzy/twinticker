@@ -22,9 +22,9 @@ test('Reader returns structured data for a known symbol', async () => {
   assert.ok(r.chain);
   assert.equal(typeof r.multiplier, 'number');
   assert.ok(r.fetchedAt);
-  // usStock is either { price: number, source: 'stooq'|'fallback' } or has an error
+  // usStock is either { price: number, source: 'yahoo'|'stooq'|'fallback-curated' } or has an error
   assert.ok(r.usStock);
-  assert.ok(['stooq', 'fallback'].includes(r.usStock.source));
+  assert.ok(['yahoo', 'stooq', 'fallback-curated', 'no-data'].includes(r.usStock.source));
 });
 
 test('Reader rejects unknown symbol gracefully', async () => {
