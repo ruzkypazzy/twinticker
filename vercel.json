@@ -1,13 +1,7 @@
 {
   "version": 2,
-  "functions": {
-    "src/server.js": {
-      "runtime": "nodejs22.x",
-      "maxDuration": 60
-    }
-  },
   "builds": [
-    { "src": "src/server.js", "use": "@vercel/node" }
+    { "src": "src/server.js", "use": "@vercel/node@22.x" }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "src/server.js" }
