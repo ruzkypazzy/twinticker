@@ -10,7 +10,7 @@
     "test": "node --test tests/smoke.test.js"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.x"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
