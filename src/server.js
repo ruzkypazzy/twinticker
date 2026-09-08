@@ -52,30 +52,23 @@ fastify.get('/health', async () => ({ ok: true, name: 'twinticker', time: new Da
 // Human-readable info page for browser visits to /mcp (so people get
 // something useful instead of "Not Found"). The MCP endpoint itself is
 // POST-only — this is just a courtesy.
+//
+// IMPORTANT: We return 405 Method Not Allowed here, not 200. The MCP
+// streamable-HTTP client (Claude Code, mcp-remote, the official SDK)
+// tries GET /mcp to open a server-initiated SSE stream. If we return
+// 200 + a body, the client waits forever for events and never sends
+// the POST. 405 is the spec-defined "this server doesn't offer a GET
+// stream" signal that lets the client move on to POST.
 fastify.get('/mcp', async (req, reply) => {
-  reply.type('text/plain').send(`TWINTICKER MCP endpoint
+  reply.code(405).type('text/plain').send(`TWINTICKER MCP endpoint
 
-This is a streamable-HTTP MCP server. Send a JSON-RPC POST request to use it.
-
-Server info:
-  name:        twinticker
-  version:     0.1.0
-  protocol:    2024-11-05
-  transport:   streamable-http
+This server uses streamable-HTTP transport (POST only). GET is not supported.
 
 Try it with curl:
 
   curl -X POST https://twinticker.vercel.app/mcp \\
     -H "Content-Type: application/json" \\
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-
-Connect from an MCP client:
-
-  {
-    "mcpServers": {
-      "twinticker": { "url": "https://twinticker.vercel.app/mcp" }
-    }
-  }
 `);
 });
 
