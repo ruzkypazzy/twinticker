@@ -106,9 +106,11 @@ fastify.post('/mcp', async (req, reply) => {
   const { jsonrpc, id, method, params } = req.body || {};
 
   // If the body is empty, just ack — useful for liveness probes.
+  // Return 202 Accepted with a JSON body so the content-type is always
+  // application/json (MCP streamable HTTP spec).
   if (!req.body || Object.keys(req.body).length === 0) {
-    reply.code(204);
-    return;
+    reply.code(202);
+    return { jsonrpc: '2.0', result: { ack: 'liveness' } };
   }
 
   if (jsonrpc !== '2.0') {
@@ -117,10 +119,11 @@ fastify.post('/mcp', async (req, reply) => {
   }
 
   // Notifications (no id, no response expected) — accept any of them, even
-  // liveness probes that omit the method field.
+  // liveness probes that omit the method field. Return 202 with a JSON ack
+  // so the content-type is always application/json.
   if (!id) {
-    reply.code(204);
-    return;
+    reply.code(202);
+    return { jsonrpc: '2.0', result: { ack: method || 'notification' } };
   }
 
   if (method === 'initialize') {
