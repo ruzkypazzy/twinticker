@@ -31,76 +31,54 @@
   }
   header {
     border-bottom: 1px solid var(--border);
-    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    padding: 20px 32px; display: flex; align-items: center; justify-content: space-between;
     background: rgba(10, 14, 26, 0.7); backdrop-filter: blur(8px);
-    position: sticky; top: 0; z-index: 10;
   }
   .brand { display: flex; align-items: center; gap: 12px; }
   .logo {
-    width: 40px; height: 40px; border-radius: 8px;
+    width: 48px; height: 48px; border-radius: 8px;
     background: linear-gradient(135deg, var(--accent) 0%, #d4951a 100%);
     display: grid; place-items: center; font-weight: 800; color: #0a0e1a;
     font-size: 18px; letter-spacing: -1px;
     object-fit: cover;
     box-shadow: 0 2px 12px rgba(240, 185, 11, 0.25);
   }
+  .hero-logo {
+    width: 320px; max-width: 80%; height: auto; margin: 0 auto 32px;
+    display: block; border-radius: 16px;
+    box-shadow: 0 12px 60px rgba(240, 185, 11, 0.2), 0 0 0 1px rgba(240, 185, 11, 0.1);
+  }
   h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
-  .tag { color: var(--muted); font-size: 12px; }
+  .tag { color: var(--muted); font-size: 13px; }
   .badge {
     display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px;
     background: rgba(240, 185, 11, 0.12); color: var(--accent);
     border: 1px solid rgba(240, 185, 11, 0.3);
   }
-  nav { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; }
-  nav a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
-  nav a:hover { color: var(--text); background: var(--panel2); }
-  .status-bar {
-    background: var(--panel); border-bottom: 1px solid var(--border);
-    padding: 8px 32px; font-size: 12px; color: var(--muted);
-    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-  }
-  .status-bar .dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--ok); margin-right: 6px;
-  }
-  .status-bar code { background: var(--panel2); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
-  main { max-width: 1100px; margin: 0 auto; padding: 32px; }
-  .hero { text-align: center; margin-bottom: 40px; padding: 24px 0; }
-  .hero-logo {
-    width: 240px; max-width: 60%; height: auto; margin: 0 auto 24px;
-    display: block; border-radius: 14px;
-    box-shadow: 0 12px 60px rgba(240, 185, 11, 0.2), 0 0 0 1px rgba(240, 185, 11, 0.1);
-  }
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+  .hero { text-align: center; margin-bottom: 48px; }
   .hero h2 {
-    font-size: 36px; font-weight: 800; margin: 0 0 12px;
+    font-size: 42px; font-weight: 800; margin: 0 0 12px;
     background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     letter-spacing: -1.5px;
   }
-  .hero p { color: var(--muted); margin: 0 auto 20px; font-size: 15px; max-width: 640px; line-height: 1.6; }
-  .hero .ctas { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .hero .ctas a {
-    padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;
-  }
-  .hero .ctas .primary { background: var(--accent); color: #0a0e1a; }
-  .hero .ctas .primary:hover { transform: translateY(-1px); }
-  .hero .ctas .secondary { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
+  .hero p { color: var(--muted); margin: 0; font-size: 16px; }
   .panel {
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 14px; padding: 24px; margin-bottom: 20px;
+    border-radius: 14px; padding: 24px; margin-bottom: 24px;
   }
-  .panel h3 { margin-top: 0; }
   .symbol-input {
     display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
   }
   .symbol-input input {
-    flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px;
+    flex: 1; min-width: 200px; padding: 12px 16px; border-radius: 8px;
     background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text); font-size: 15px; font-family: inherit;
+    color: var(--text); font-size: 16px; font-family: inherit;
   }
   .symbol-input input:focus { outline: none; border-color: var(--accent); }
   .btn {
-    padding: 10px 18px; border-radius: 8px; border: none;
+    padding: 12px 20px; border-radius: 8px; border: none;
     background: var(--accent); color: #0a0e1a; font-weight: 700; cursor: pointer;
     font-size: 14px; transition: transform 0.1s, opacity 0.1s;
   }
@@ -109,7 +87,7 @@
   .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
   .chip {
-    padding: 5px 11px; border-radius: 999px; background: var(--panel2);
+    padding: 6px 12px; border-radius: 999px; background: var(--panel2);
     border: 1px solid var(--border); cursor: pointer; font-size: 12px;
     color: var(--muted); transition: all 0.15s;
   }
@@ -117,13 +95,13 @@
   .verdict {
     display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
     background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px;
+    border-radius: 12px; padding: 24px;
   }
-  .v-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  .v-symbol { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-  .v-name { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .v-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+  .v-symbol { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .v-name { color: var(--muted); font-size: 14px; margin-top: 2px; }
   .v-pill {
-    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   .v-pill.FAIR_VALUE { background: rgba(0, 212, 168, 0.15); color: var(--ok); border: 1px solid var(--ok); }
@@ -133,34 +111,30 @@
   .v-pill.HALTED      { background: rgba(255, 170, 59, 0.15); color: var(--warn); border: 1px solid var(--warn); }
   .metric { display: flex; flex-direction: column; gap: 4px; }
   .metric .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-  .metric .val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .metric .val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .rationale {
-    grid-column: 1 / -1; padding: 14px; background: var(--bg);
+    grid-column: 1 / -1; padding: 16px; background: var(--bg);
     border-left: 3px solid var(--accent); border-radius: 6px;
     color: var(--text); font-size: 14px; line-height: 1.6;
   }
   .src { grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
-  .grid-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .grid-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   .row {
     background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px; cursor: pointer; transition: border-color 0.15s;
+    border-radius: 10px; padding: 14px; cursor: pointer; transition: border-color 0.15s;
   }
   .row:hover { border-color: var(--accent); }
-  .row .r-sym { font-weight: 800; font-size: 15px; }
-  .row .r-div { font-variant-numeric: tabular-nums; font-size: 13px; margin-top: 3px; }
-  .row .r-verdict { font-size: 11px; text-transform: uppercase; margin-top: 5px; letter-spacing: 0.5px; }
-  footer { text-align: center; color: var(--muted); padding: 32px 0; font-size: 12px; }
+  .row .r-sym { font-weight: 800; font-size: 16px; }
+  .row .r-div { font-variant-numeric: tabular-nums; font-size: 14px; margin-top: 4px; }
+  .row .r-verdict { font-size: 11px; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px; }
+  footer { text-align: center; color: var(--muted); padding: 40px 0; font-size: 12px; }
   footer a { color: var(--accent); text-decoration: none; }
   .stack { font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
   .err { color: var(--danger); }
   code { background: var(--panel2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
-  pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 12px; }
-  pre code { background: transparent; padding: 0; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 720px) {
+  @media (max-width: 640px) {
     .verdict { grid-template-columns: 1fr; }
-    .hero h2 { font-size: 28px; }
-    .grid-2 { grid-template-columns: 1fr; }
+    .hero h2 { font-size: 32px; }
   }
 </style>
 </head>
@@ -173,207 +147,58 @@
       <div class="tag">Two tickers, one truth.</div>
     </div>
   </div>
-  <nav>
-    <a href="#app">App</a>
-    <a href="#how">How</a>
-    <a href="#architecture">Architecture</a>
-    <a href="#safety">Safety</a>
-    <a href="#connect">Connect</a>
-    <a href="https://github.com/ruzkypazzy/twinticker" target="_blank" rel="noopener">GitHub</a>
-  </nav>
+  <div>
+    <span class="badge">Binance Agent OS · Track A</span>
+  </div>
 </header>
-
-<div class="status-bar">
-  <span><span class="dot"></span>Live · no wallet connected · no keys required</span>
-  <span>·</span>
-  <span>upstream: <code id="upstream">checking…</code></span>
-  <span>·</span>
-  <span>universe: <code id="universe">—</code> Ondo tokens on BNB Chain</span>
-  <span>·</span>
-  <span>·</span>
-  <span><a href="/mcp" style="color:var(--accent)">MCP endpoint</a></span>
-</div>
-
 <main>
-
-<section class="hero" id="top">
-  <img class="hero-logo" src="/logo-hero.jpg" alt="TWINTICKER — twin ticker streams converging on a crystal" />
-  <h2>Two tickers, one truth.</h2>
-  <p>TWINTICKER is an AI agent on <b>Binance Agent OS</b> that watches Ondo-tokenized US stocks on BNB Chain and compares them to the underlying US equity in real time. It flags divergence, explains why it matters, and — with your own wallet — can swap into the mispriced token via the <b>Binance Agentic Wallet</b>.</p>
-  <div class="ctas">
-    <a class="primary" href="#app">Launch app</a>
-    <a class="secondary" href="https://github.com/ruzkypazzy/twinticker" target="_blank" rel="noopener">View on GitHub</a>
+  <div class="hero">
+    <img class="hero-logo" src="/logo-hero.jpg" alt="TWINTICKER — twin ticker streams converging on a crystal" />
+    <h2>Watch Ondo tokenized US stocks.<br />On BNB Chain. Live.</h2>
+    <p>Detects divergence between on-chain tokenized equities and the underlying US stocks. Powered by <code>binance-tokenized-securities-info</code> + live US equity feed + GPT-4o-mini.</p>
   </div>
-</section>
 
-<section class="panel" id="app">
-  <h3>Live demo — scan a symbol</h3>
-  <p style="color:var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 16px">
-    Pick a US ticker and TWINTICKER will pull the live on-chain price of its Ondo token, the live US equity price, and the official <code>sharesMultiplier</code>, then compute the divergence in basis points and apply a deterministic verdict. The natural-language rationale is written by <code>gpt-4o-mini</code> from the same data. <b>Read-only</b> — no wallet, no keys, no execution.
-  </p>
-  <div class="symbol-input">
-    <input id="sym" type="text" placeholder="NVDA, TSLA, AAPL, MSFT, GOOGL, AMZN, META, JPM…" value="NVDA" />
-    <button class="btn" id="scan-btn">Scan</button>
-    <button class="btn btn-ghost" id="scan-all-btn">Scan all</button>
+  <div class="panel">
+    <h3 style="margin-top:0">Scan a symbol</h3>
+    <div class="symbol-input">
+      <input id="sym" type="text" placeholder="NVDA, TSLA, AAPL, MSFT, GOOGL, AMZN, META, JPM…" value="NVDA" />
+      <button class="btn" id="scan-btn">Scan</button>
+      <button class="btn btn-ghost" id="scan-all-btn">Scan all</button>
+    </div>
+    <div class="chips">
+      <span class="chip" data-sym="NVDA">NVDA</span>
+      <span class="chip" data-sym="TSLA">TSLA</span>
+      <span class="chip" data-sym="AAPL">AAPL</span>
+      <span class="chip" data-sym="MSFT">MSFT</span>
+      <span class="chip" data-sym="GOOGL">GOOGL</span>
+      <span class="chip" data-sym="AMZN">AMZN</span>
+      <span class="chip" data-sym="META">META</span>
+      <span class="chip" data-sym="JPM">JPM</span>
+      <span class="chip" data-sym="SPY">SPY</span>
+      <span class="chip" data-sym="QQQ">QQQ</span>
+    </div>
+    <div id="result"></div>
   </div>
-  <div class="chips">
-    <span class="chip" data-sym="NVDA">NVDA</span>
-    <span class="chip" data-sym="TSLA">TSLA</span>
-    <span class="chip" data-sym="AAPL">AAPL</span>
-    <span class="chip" data-sym="MSFT">MSFT</span>
-    <span class="chip" data-sym="GOOGL">GOOGL</span>
-    <span class="chip" data-sym="AMZN">AMZN</span>
-    <span class="chip" data-sym="META">META</span>
-    <span class="chip" data-sym="JPM">JPM</span>
-    <span class="chip" data-sym="SPY">SPY</span>
-    <span class="chip" data-sym="QQQ">QQQ</span>
+
+  <div class="panel" id="all-panel" style="display:none">
+    <h3 style="margin-top:0">All tokenized US stocks — ranked by divergence</h3>
+    <div class="grid-results" id="all-grid"></div>
   </div>
-  <div id="result"></div>
-</section>
 
-<section class="panel" id="all-panel" style="display:none">
-  <h3>All tokenized US stocks — ranked by divergence</h3>
-  <div class="grid-results" id="all-grid"></div>
-</section>
-
-<section class="panel" id="how">
-  <h3>How it works</h3>
-  <p style="color:var(--muted); line-height: 1.7; font-size: 14px; margin: 0 0 12px">
-    Three agents run in sequence, each written to be small, auditable, and replaceable.
-  </p>
-  <div class="grid-2">
-    <div>
-      <p style="color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 8px"><b>1. Reader</b></p>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Resolves the ticker to an Ondo contract on BNB Chain via the official
-        <code>binance-tokenized-securities-info</code> REST API. Fetches both the
-        live on-chain price (from the same API's dynamic endpoint) and the live
-        US equity price (from its <code>stockInfo</code> field, refreshed every few
-        seconds by Binance's data feed).
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 8px"><b>2. Analyzer</b></p>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Applies the Ondo <code>sharesMultiplier</code> to the reference price,
-        computes the divergence in basis points, checks the corporate-action halt
-        code, and emits a deterministic verdict: <code>FAIR_VALUE</code>,
-        <code>UNDERVALUED</code>, <code>OVERVALUED</code>, or <code>HALTED</code>.
-        The LLM is called once to write a one-paragraph rationale from the same
-        numbers — it never invents a verdict.
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 8px"><b>3. Scanner</b></p>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Runs the Reader + Analyzer over the full Ondo universe and ranks by
-        absolute divergence, so the most mispriced tokens surface first.
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 8px"><b>4. Executor (optional)</b></p>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        If the verdict is actionable and you've connected your own Agentic Wallet,
-        TWINTICKER can call <code>baw market-order swap</code> on BSC, capped at
-        $5 per trade. Disabled by default — you wire your own wallet, you confirm
-        every tx in the Binance app.
-      </p>
-    </div>
+  <div class="panel">
+    <h3 style="margin-top:0">How it works</h3>
+    <p style="color:var(--muted); line-height:1.7; font-size:14px">
+      TWINTICKER runs three agents: a <b>Reader</b> that pulls on-chain token data via
+      <code>binance-tokenized-securities-info</code> and the underlying US equity price
+      from a free public feed; an <b>Analyzer</b> that computes the divergence in basis
+      points, applies the Ondo <code>multiplier</code>, and produces a verdict
+      (FAIR_VALUE / UNDERVALUED / OVERVALUED / HALTED); and a <b>Scanner</b> that runs
+      the whole pipeline across the full Ondo universe and ranks by absolute divergence.
+      The MCP server exposes both <code>twinticker_scan</code> and
+      <code>twinticker_scan_all</code> to any MCP-compatible agent — Claude Code, Codex,
+      Cursor, ChatGPT. Built for the Binance Agent OS Mini Hackathon.
+    </p>
   </div>
-</section>
-
-<section class="panel" id="architecture">
-  <h3>Architecture — one engine, three surfaces</h3>
-  <p style="color: var(--muted); line-height: 1.7; font-size: 14px; margin: 0 0 12px">
-    Same data, same agents, same verdicts — exposed to three kinds of clients.
-  </p>
-  <pre><code>┌────────────────────────────────────────────────────────────────────┐
-│  Surfaces                                                           │
-│  · MCP server  (streamable HTTP :443/mcp  +  stdio shim)            │
-│  · REST API    (GET /api/scan/:symbol  ·  GET /api/scan-all)        │
-│  · This page   (browser)                                            │
-└──────────────────────────────┬─────────────────────────────────────┘
-                               │  JSON-RPC / fetch
-┌──────────────────────────────▼─────────────────────────────────────┐
-│  Fastify on Vercel · src/server.js (Node 22)                        │
-│  /mcp  ·  /api/scan/:symbol  ·  /api/scan-all  ·  /                │
-└──────────────────────────────┬─────────────────────────────────────┘
-                               │
-        ┌──────────────────────┼──────────────────────┐
-        ▼                      ▼                      ▼
-   Reader (REST)        Analyzer (LLM)        Scanner (batch)
-   binance-tokenized-   gpt-4o-mini           calls Reader + Analyzer
-   securities-info      writes rationale      over the full Ondo list
-   on-chain price                             ranked by |divergence|
-   US equity price
-   sharesMultiplier
-
-When the user wires their own Agentic Wallet (locally, on their machine),
-the Executor calls  baw market-order swap  on BSC, capped at $5.</code></pre>
-</section>
-
-<section class="panel" id="safety">
-  <h3>Safety</h3>
-  <ul style="color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0; padding-left: 20px">
-    <li><b>The hosted site never touches a wallet.</b> The demo is read-only: scan, quote, and an honest dry-run output. No keys, no signing, no broadcast.</li>
-    <li><b>The verdict is deterministic.</b> The 20-line math that decides <code>FAIR_VALUE / UNDERVALUED / OVERVALUED / HALTED</code> is the same function every time. The LLM is only used to write the rationale from numbers it didn't generate.</li>
-    <li><b>Execution is the user's job.</b> To actually swap, you install the stdio MCP shim locally, run <code>baw auth signin</code>, and pair your own Agentic Wallet. The hard $5 cap on swap size is enforced on the executor before <code>baw</code> is called.</li>
-    <li><b>Tokenized equity ≠ equity.</b> A real-world corporate action (dividend, split, earnings halt) can move the on-chain price away from the underlying. TWINTICKER surfaces the official Binance <code>reasonCode</code> in every verdict and refuses to recommend action during a halt.</li>
-  </ul>
-</section>
-
-<section class="panel" id="connect">
-  <h3>Connect</h3>
-  <p style="color: var(--muted); line-height: 1.7; font-size: 14px; margin: 0 0 12px">
-    Three ways to use TWINTICKER. All three are read-only against the live data; only the local install path can execute (and only against your own wallet).
-  </p>
-  <div class="grid-2">
-    <div>
-      <p style="color: var(--text); font-size: 14px; margin: 0 0 6px"><b>A. Use the live endpoint in your LLM</b></p>
-<pre><code>claude mcp add twinticker \
-  --transport http https://twinticker.vercel.app/mcp</code></pre>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Works with any MCP-compatible LLM (Claude Code, Codex, Cursor, Windsurf, Continue, …).
-        The hosted site is read-only — your LLM can scan and quote through the same endpoint.
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; margin: 0 0 6px"><b>B. Install the stdio shim locally</b></p>
-<pre><code>git clone https://github.com/ruzkypazzy/twinticker
-cd twinticker && npm install
-claude mcp add twinticker -- node $(pwd)/src/mcp-stdio.js</code></pre>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Same tools, over stdio. Works with every MCP client. The shim proxies
-        to the same hosted API — no data is changed.
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; margin: 0 0 6px"><b>C. Execute live (your wallet, your call)</b></p>
-<pre><code># 1. install baw
-npm install -g @binance/agentic-wallet
-# 2. pair with your wallet
-baw auth signin --json
-# 3. fund the Agentic sub-account (BSC, USDT)
-# 4. wire the local executor
-BAW_ENABLED=true npm run mcp</code></pre>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        Once paired, <code>twinticker_execute</code> routes through <code>baw market-order swap</code>
-        on BSC. Every tx is confirmed in your Binance app before broadcast.
-        The executor caps each swap at $5 — you raise the cap in the source.
-      </p>
-    </div>
-    <div>
-      <p style="color: var(--text); font-size: 14px; margin: 0 0 6px"><b>D. Just talk to it from a script</b></p>
-<pre><code>curl -X POST https://twinticker.vercel.app/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
-        The MCP endpoint is just JSON-RPC over HTTP. Pipe it into anything.
-      </p>
-    </div>
-  </div>
-</section>
-
 </main>
 <footer>
   Built by <a href="https://github.com/ruzkypazzy" target="_blank" rel="noopener">@ruzkypazzy</a>
@@ -386,10 +211,6 @@ const $ = (s) => document.querySelector(s);
 const result = $('#result');
 const allPanel = $('#all-panel');
 const allGrid = $('#all-grid');
-const upstream = $('#upstream');
-const universe = $('#universe');
-
-let lastVerdict = null;
 
 async function scan(symbol) {
   result.innerHTML = '<div class="panel" style="background:var(--panel2)">Scanning ' + symbol + '…</div>';
@@ -405,9 +226,9 @@ async function scan(symbol) {
 }
 
 function renderVerdict(d) {
-  lastVerdict = d;
   const div = d.divergenceBps;
   const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(1) + ' bps';
+  const divClass = div != null && Math.abs(div) < 50 ? 'ok' : (div != null && div < 0 ? 'ok' : '');
   const pill = (d.verdict || 'NO_DATA').replace('_', ' ');
   result.innerHTML = `
     <div class="verdict">
@@ -449,12 +270,11 @@ function renderVerdict(d) {
 
 async function scanAll() {
   allPanel.style.display = 'block';
-  allGrid.innerHTML = '<div style="color:var(--muted)">Scanning all Ondo tokens…</div>';
+  allGrid.innerHTML = '<div style="color:var(--muted)">Scanning all 10 Ondo tokens…</div>';
   try {
     const r = await fetch('/api/scan-all');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
-    universe.textContent = d.count || '—';
     allGrid.innerHTML = d.results.map((x) => {
       const div = x.divergenceBps;
       const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(1);
@@ -473,24 +293,6 @@ async function scanAll() {
   }
 }
 
-async function reportUpstream() {
-  // Honest upstream status. The hosted site is read-only against the
-  // public binance-tokenized-securities-info API — no wallet, no auth.
-  try {
-    const r = await fetch('/api/scan/NVDA');
-    if (r.ok) {
-      upstream.textContent = 'binance-tokenized-securities-info (read-only, no auth)';
-      upstream.style.color = 'var(--ok)';
-    } else {
-      upstream.textContent = 'unreachable';
-      upstream.style.color = 'var(--danger)';
-    }
-  } catch {
-    upstream.textContent = 'offline';
-    upstream.style.color = 'var(--danger)';
-  }
-}
-
 $('#scan-btn').addEventListener('click', () => scan($('#sym').value.trim()));
 $('#sym').addEventListener('keydown', (e) => { if (e.key === 'Enter') scan($('#sym').value.trim()); });
 $('#scan-all-btn').addEventListener('click', scanAll);
@@ -498,11 +300,8 @@ document.querySelectorAll('.chip').forEach((c) => {
   c.addEventListener('click', () => { $('#sym').value = c.dataset.sym; scan(c.dataset.sym); });
 });
 
-// On load: scan NVDA, then poll scan-all in the background to populate the
-// universe counter in the status bar.
+// Auto-scan NVDA on load
 scan('NVDA');
-setTimeout(scanAll, 200);
-setTimeout(reportUpstream, 400);
 </script>
 </body>
 </html>
