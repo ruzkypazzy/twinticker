@@ -47,6 +47,25 @@ fastify.get('/', async (req, reply) => {
   reply.type('text/html').send(html);
 });
 
+// Serve static assets from public/ (logo images, etc.) with a 1-day
+// cache so the browser doesn't re-fetch on every page load.
+fastify.get('/logo-:file', async (req, reply) => {
+  const { file } = req.params;
+  if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|svg|webp|gif|ico)$/i.test(file)) {
+    reply.code(400);
+    return { error: 'invalid file' };
+  }
+  try {
+    const buf = readFileSync(join(__dirname, '..', 'public', file));
+    const ext = file.split('.').pop().toLowerCase();
+    const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', svg: 'image/svg+xml', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' }[ext];
+    reply.type(mime).header('Cache-Control', 'public, max-age=86400').send(buf);
+  } catch (err) {
+    reply.code(404);
+    return { error: 'not found' };
+  }
+});
+
 fastify.get('/health', async () => ({ ok: true, name: 'twinticker', time: new Date().toISOString() }));
 
 // Human-readable info page for browser visits to /mcp (so people get
