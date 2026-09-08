@@ -9,6 +9,73 @@
 
 ---
 
+## Use the live endpoint in 10 seconds
+
+The hosted endpoint is live at `https://twinticker.vercel.app/mcp`. Point any
+MCP-capable LLM client at it and start scanning. No signup, no API key, no
+deploy.
+
+**Claude Code (one command):**
+
+```bash
+claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp
+```
+
+**Any other MCP client** — paste this into its MCP config:
+
+```json
+{
+  "mcpServers": {
+    "twinticker": {
+      "url": "https://twinticker.vercel.app/mcp"
+    }
+  }
+}
+```
+
+**`curl` / raw HTTP:**
+
+```bash
+# 1. List available tools
+curl -X POST https://twinticker.vercel.app/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# 2. Scan a single ticker
+curl -X POST https://twinticker.vercel.app/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"twinticker_scan","arguments":{"symbol":"NVDA"}}}'
+
+# 3. Scan all tokenized US stocks at once
+curl -X POST https://twinticker.vercel.app/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"twinticker_scan_all","arguments":{}}}'
+```
+
+Three tools are exposed:
+
+| Tool | What it does |
+|---|---|
+| `twinticker_scan` | Scan a single Ondo tokenized US stock (e.g. `NVDA`, `TSLA`, `AAPL`) for divergence vs its underlying equity. Returns a verdict card. |
+| `twinticker_scan_all` | Scan every available Ondo tokenized US stock. Returns a ranked list by absolute divergence. |
+| `twinticker_execute` | (Optional) Execute a USDT → Ondo swap via the Binance Agentic Wallet. Dry-run by default. Requires `confirm:true`. |
+
+REST shortcuts (no JSON-RPC needed):
+
+| Endpoint | What it returns |
+|---|---|
+| `GET https://twinticker.vercel.app/health` | Liveness probe (`{ok:true,...}`) |
+| `GET https://twinticker.vercel.app/api/scan/NVDA` | Verdict card for one symbol |
+| `GET https://twinticker.vercel.app/api/scan-all` | All 444 tokenized tickers, ranked |
+
+> **If `claude mcp add --transport http` hangs on first connect** (a known bug
+> in Claude Code 2.x's streamable-HTTP client, unrelated to this server), use
+> the stdio fallback in [Path C](#path-c--connect-from-your-llm-client-works-with-both-path-a-and-path-b)
+> instead. The HTTP endpoint itself is fine — any other client (MCP Inspector,
+> `curl`, custom SDK code) works against it.
+
+---
+
 ## What TWINTICKER does (in one line)
 
 > Reads the **live on-chain price** of an Ondo-tokenized US stock from the official `binance-tokenized-securities-info` REST API, reads the **live US equity price** from the same API's `stockInfo` field, computes the divergence in basis points, applies the Ondo `sharesMultiplier`, and surfaces a verdict card: `FAIR_VALUE` / `UNDERVALUED` / `OVERVALUED` / `HALTED` / `NO_DATA`.
