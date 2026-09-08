@@ -4,9 +4,19 @@
   "description": "Two tickers, one truth. TWINTICKER detects divergence between Ondo tokenized US stocks on BNB Chain and their underlying US equity prices, on Binance Agent OS.",
   "type": "module",
   "main": "src/server.js",
+  "bin": {
+    "twinticker": "./src/mcp-stdio.js"
+  },
+  "files": [
+    "src/mcp-stdio.js",
+    "src/agents",
+    "src/server.js",
+    "README.md"
+  ],
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "mcp": "node src/mcp-stdio.js",
     "test": "node --test tests/smoke.test.js"
   },
   "engines": {
@@ -19,5 +29,5 @@
     "undici": "^6.21.0"
   },
   "license": "MIT",
-  "keywords": ["binance", "agent-os", "mcp", "rwa", "ondo", "bnb-chain", "hackathon"]
+  "keywords": ["binance", "agent-os", "mcp", "rwa", "ondo", "bnb-chain", "twinticker"]
 }
