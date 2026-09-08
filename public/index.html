@@ -186,6 +186,40 @@
   </div>
 
   <div class="panel">
+    <h3 style="margin-top:0">Agentic Wallet <span class="badge" id="bridge-badge" style="margin-left:8px">checking…</span></h3>
+    <p style="color:var(--muted); line-height:1.7; font-size:14px; margin:0 0 16px">
+      TWINTICKER can swap into the mispriced token through the
+      <b>Binance Agentic Wallet</b> (<code>baw</code> CLI). The wallet
+      itself lives on a long-running VPS — the public demo calls into
+      it through a Cloudflare tunnel.
+    </p>
+    <div id="wallet-info" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px"></div>
+    <div id="exec-flow" style="border-top: 1px solid var(--border); padding-top: 16px">
+      <h4 style="margin:0 0 12px">Execute a swap</h4>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom: 12px">
+        <div>
+          <div class="metric"><div class="lbl">Symbol</div><div class="val" id="exec-symbol" style="font-size:16px">—</div></div>
+        </div>
+        <div>
+          <div class="metric"><div class="lbl">USDT amount (capped $5)</div>
+            <input id="exec-amount" type="number" min="0.1" max="5" step="0.1" value="1" style="width:100%; padding:8px; background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:6px; font-size:14px" />
+          </div>
+        </div>
+        <div>
+          <div class="metric"><div class="lbl">Slippage</div>
+            <input id="exec-slippage" type="number" min="0.1" max="5" step="0.1" value="1" style="width:100%; padding:8px; background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:6px; font-size:14px" />
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-ghost" id="quote-btn" style="margin-bottom: 4px">Quote</button>
+          <button class="btn" id="execute-btn" disabled>Execute</button>
+        </div>
+      </div>
+      <div id="exec-output" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; min-height: 60px; white-space: pre-wrap; color: var(--muted)">Click <b>Quote</b> to get a live swap quote from the Binance Agentic Wallet.</div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h3 style="margin-top:0">How it works</h3>
     <p style="color:var(--muted); line-height:1.7; font-size:14px">
       TWINTICKER runs three agents: a <b>Reader</b> that pulls on-chain token data via
@@ -300,8 +334,162 @@ document.querySelectorAll('.chip').forEach((c) => {
   c.addEventListener('click', () => { $('#sym').value = c.dataset.sym; scan(c.dataset.sym); });
 });
 
+// ============================================================================
+// Agentic Wallet bridge — check status, get quotes, execute swaps
+// ============================================================================
+
+let lastVerdict = null;
+let lastQuote = null;
+const USDT_BSC = '0x55d398326f99059fF775485246999027B3197955';
+
+const walletInfo = $('#wallet-info');
+const bridgeBadge = $('#bridge-badge');
+const execSymbol = $('#exec-symbol');
+const execAmount = $('#exec-amount');
+const execSlippage = $('#exec-slippage');
+const quoteBtn = $('#quote-btn');
+const executeBtn = $('#execute-btn');
+const execOutput = $('#exec-output');
+
+async function checkBridge() {
+  try {
+    const r = await fetch('/api/bridge/health');
+    const d = await r.json();
+    if (d.ok && d.data && d.data.ok) {
+      bridgeBadge.textContent = 'connected';
+      bridgeBadge.style.background = 'rgba(0, 212, 168, 0.15)';
+      bridgeBadge.style.color = 'var(--ok)';
+      bridgeBadge.style.borderColor = 'var(--ok)';
+      const bscAddr = (d.data.data?.addresses || []).find((a) => a.binanceChainId === '56')?.address || '—';
+      walletInfo.innerHTML = `
+        <div class="metric"><div class="lbl">Wallet status</div><div class="val" style="color:var(--ok); font-size:16px">${d.data.data?.baw?.status || '—'}</div></div>
+        <div class="metric"><div class="lbl">BSC address</div><div class="val" style="font-size:13px; word-break: break-all">${bscAddr}</div></div>
+        <div class="metric"><div class="lbl">Daily limit left</div><div class="val" style="font-size:16px">$50,000</div></div>
+        <div class="metric"><div class="lbl">Bridge</div><div class="val" style="font-size:13px">trycloudflare.com tunnel</div></div>
+      `;
+      quoteBtn.disabled = false;
+    } else {
+      bridgeBadge.textContent = 'not connected';
+      bridgeBadge.style.background = 'rgba(255, 77, 109, 0.15)';
+      bridgeBadge.style.color = 'var(--danger)';
+      bridgeBadge.style.borderColor = 'var(--danger)';
+      walletInfo.innerHTML = `<div class="metric"><div class="lbl">Error</div><div class="val" style="color:var(--danger); font-size:14px">${(d.data?.error || d.error || 'bridge offline').substring(0, 80)}</div></div>`;
+    }
+  } catch (e) {
+    bridgeBadge.textContent = 'offline';
+    walletInfo.innerHTML = `<div class="metric"><div class="lbl">Error</div><div class="val" style="color:var(--danger); font-size:14px">${e.message}</div></div>`;
+  }
+}
+
+function renderVerdict(d) {
+  lastVerdict = d;
+  execSymbol.textContent = d.symbol;
+  const div = d.divergenceBps;
+  const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(1) + ' bps';
+  const pill = (d.verdict || 'NO_DATA').replace('_', ' ');
+  result.innerHTML = `
+    <div class="verdict">
+      <div class="v-head">
+        <div>
+          <div class="v-symbol">${d.symbol}</div>
+          <div class="v-name">${d.name || ''} · ${d.chain || ''} chain · multiplier ${d.multiplier || 1}</div>
+        </div>
+        <div class="v-pill ${d.verdict}">${pill}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Divergence</div>
+        <div class="val">${divStr}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Action</div>
+        <div class="val">${d.action || '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Fair value (ref)</div>
+        <div class="val">$${d.fairValue != null ? d.fairValue.toFixed(2) : '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">On-chain observed</div>
+        <div class="val">$${d.observedPrice != null ? d.observedPrice.toFixed(2) : '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Confidence</div>
+        <div class="val">${d.confidence || '—'}</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Fetched</div>
+        <div class="val" style="font-size:14px">${d.fetchedAt ? new Date(d.fetchedAt).toLocaleTimeString() : '—'}</div>
+      </div>
+      <div class="rationale">${d.rationale || ''}</div>
+      <div class="src">US source: <code>${d.usStock?.source || '—'}</code> · On-chain source: <code>${d.onchain?.source || '—'}</code></div>
+    </div>`;
+  // Reset execute flow on new scan
+  execOutput.textContent = 'Click "Quote" to get a live swap quote from the Binance Agentic Wallet.';
+  executeBtn.disabled = true;
+  lastQuote = null;
+}
+
+quoteBtn.addEventListener('click', async () => {
+  if (!lastVerdict) {
+    execOutput.textContent = 'Scan a symbol first.';
+    return;
+  }
+  const toToken = lastVerdict.contractAddress;
+  if (!toToken) {
+    execOutput.textContent = 'No contract address for this symbol. Try NVDA, TSLA, AAPL.';
+    return;
+  }
+  const amt = Number(execAmount.value);
+  const slip = Number(execSlippage.value);
+  if (!amt || amt < 0.1 || amt > 5) {
+    execOutput.textContent = 'Amount must be between 0.1 and 5 USDT.';
+    return;
+  }
+  quoteBtn.disabled = true;
+  execOutput.textContent = 'Requesting quote from Agentic Wallet…';
+  try {
+    const r = await fetch(`/api/quote?fromToken=${USDT_BSC}&toToken=${toToken}&fromTokenQty=${amt}`);
+    const d = await r.json();
+    if (d.ok && d.data && d.data.success !== false) {
+      const data = d.data.data || d.data;
+      lastQuote = { fromToken: USDT_BSC, toToken, fromTokenQty: amt, slippage: slip };
+      execOutput.textContent = JSON.stringify(d.data, null, 2);
+      executeBtn.disabled = false;
+    } else {
+      execOutput.textContent = 'Quote failed:\n' + JSON.stringify(d, null, 2);
+    }
+  } catch (e) {
+    execOutput.textContent = 'Error: ' + e.message;
+  } finally {
+    quoteBtn.disabled = false;
+  }
+});
+
+executeBtn.addEventListener('click', async () => {
+  if (!lastQuote) return;
+  if (!confirm(`This will swap ${lastQuote.fromTokenQty} USDT for ${lastVerdict.symbol} via the Binance Agentic Wallet. Confirm in the Binance app on your phone. Continue?`)) return;
+  executeBtn.disabled = true;
+  quoteBtn.disabled = true;
+  execOutput.textContent = 'Broadcasting swap to Agentic Wallet (you will need to confirm in the Binance app)…';
+  try {
+    const r = await fetch('/api/execute', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(lastQuote),
+    });
+    const d = await r.json();
+    execOutput.textContent = JSON.stringify(d, null, 2);
+  } catch (e) {
+    execOutput.textContent = 'Error: ' + e.message;
+  } finally {
+    quoteBtn.disabled = false;
+    executeBtn.disabled = false;
+  }
+});
+
 // Auto-scan NVDA on load
 scan('NVDA');
+checkBridge();
 </script>
 </body>
 </html>

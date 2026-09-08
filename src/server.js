@@ -139,6 +139,77 @@ fastify.get('/api/scan-all', async (req, reply) => {
   }
 });
 
+// ============================================================================
+// Bridge to the VPS-hosted Binance Agentic Wallet (baw) instance.
+//
+// The Vercel-hosted site is a serverless function. It cannot run the
+// `baw` CLI directly (it holds a wallet key and requires a long-running
+// process). Instead, the site calls into a tiny Fastify bridge that
+// lives on the user's VPS (185.2.101.34) and is exposed to the public
+// internet via a Cloudflare quick-tunnel.
+//
+// URLs:
+//   TT_BAW_BRIDGE_URL  — e.g. https://<random>.trycloudflare.com
+//   TT_BAW_BRIDGE_SECRET — shared secret for the X-TT-Secret header
+//
+// The browser hits Vercel's /api/quote and /api/execute, which
+// forward to the bridge. The secret never leaves the server.
+// ============================================================================
+
+const BAW_BRIDGE = process.env.TT_BAW_BRIDGE_URL || '';
+const BAW_SECRET = process.env.TT_BAW_BRIDGE_SECRET || '';
+
+async function callBawBridge(path, init = {}) {
+  if (!BAW_BRIDGE) {
+    return { ok: false, error: 'BAW bridge not configured (set TT_BAW_BRIDGE_URL on the host)' };
+  }
+  const headers = { ...(init.headers || {}), 'x-tt-secret': BAW_SECRET };
+  const res = await fetch(BAW_BRIDGE + path, { ...init, headers });
+  const text = await res.text();
+  try {
+    return { ok: res.ok, status: res.status, data: JSON.parse(text) };
+  } catch {
+    return { ok: res.ok, status: res.status, data: text };
+  }
+}
+
+fastify.get('/api/bridge/health', async (req, reply) => {
+  if (!BAW_BRIDGE) {
+    reply.code(503);
+    return { ok: false, error: 'BAW bridge not configured' };
+  }
+  return await callBawBridge('/health');
+});
+
+// GET /api/quote?fromToken=<addr>&toToken=<addr>&fromTokenQty=<usdt>
+fastify.get('/api/quote', async (req, reply) => {
+  const { fromToken, toToken, fromTokenQty } = req.query;
+  if (!fromToken || !toToken || !fromTokenQty) {
+    reply.code(400);
+    return { ok: false, error: 'fromToken, toToken, fromTokenQty required' };
+  }
+  const qs = new URLSearchParams({ fromToken, toToken, fromTokenQty: String(fromTokenQty) });
+  return await callBawBridge('/quote?' + qs.toString());
+});
+
+// POST /api/execute  body: { fromToken, toToken, fromTokenQty, slippage?, mev?, gasLevel? }
+fastify.post('/api/execute', async (req, reply) => {
+  if (!BAW_BRIDGE) {
+    reply.code(503);
+    return { ok: false, error: 'BAW bridge not configured' };
+  }
+  const body = req.body || {};
+  if (!body.fromToken || !body.toToken || !body.fromTokenQty) {
+    reply.code(400);
+    return { ok: false, error: 'fromToken, toToken, fromTokenQty required' };
+  }
+  return await callBawBridge('/execute', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+});
+
 // MCP server endpoint (streamable HTTP transport)
 fastify.post('/mcp', async (req, reply) => {
   // If the client sent a session ID, echo it back. If this is the
