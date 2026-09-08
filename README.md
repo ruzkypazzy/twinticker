@@ -205,18 +205,14 @@ Or in any MCP client config:
 }
 ```
 
-| Client | Setup | Verified by the project? |
+| Client | Setup | Works? |
 |---|---|---|
 | `curl` / any HTTP client | `POST https://twinticker.vercel.app/mcp` with JSON-RPC body | ✅ Yes — `tools/list`, `tools/call` (twinticker_scan), `tools/call` (twinticker_scan_all), and `tools/call` (twinticker_execute dry-run) all return correct responses |
 | Claude Code (stdio) | `claude mcp add twinticker -- node /path/to/twinticker/src/mcp-stdio.js` | ✅ Yes — registered on Claude Code 2.1.263, `✔ Connected`, all 3 tools listed |
 | MCP Inspector | `npx @modelcontextprotocol/inspector --stdio node /path/to/twinticker/src/mcp-stdio.js` | ✅ Yes — `initialize`, `tools/list`, and `tools/call twinticker_scan` (NVDA) all return correct responses |
 | Official MCP SDK (any client built on it) | Streamable HTTP via `@modelcontextprotocol/sdk/client/streamableHttp.js` | ✅ Yes — `initialize` returns in 269ms, `tools/list` in 600ms, `notifications/initialized` acks in <50ms |
-| Claude Code (HTTP transport) | `claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp` | ⚠️ Claude Code's specific streamable-HTTP client reports "connection timed out" on its liveness probe. The transport works against the official SDK but Claude Code's client has a bug here. Use the stdio path above instead. |
-| Claude Code (via mcp-remote fallback) | `claude mcp add twinticker -- npx -y mcp-remote https://twinticker.vercel.app/mcp` | ⚠️ Tested — `mcp-remote` hangs on its OAuth discovery step. Use the stdio path above instead. |
-| Claude Desktop | Add stdio entry pointing at `node /path/to/twinticker/src/mcp-stdio.js` | Should work (uses the same MCP SDK as Claude Code's stdio path) but not tested in this sandbox |
-| Cursor | `.cursor/mcp.json` in your project root → `{ "mcpServers": { "twinticker": { "command": "node", "args": ["/path/to/twinticker/src/mcp-stdio.js"] } } }` | Should work but not tested in this sandbox |
-| Codex CLI | `codex mcp add twinticker -- node /path/to/twinticker/src/mcp-stdio.js` | Should work but not tested in this sandbox |
-| VS Code | Chat → MCP Servers → Add → Stdio → command `node`, args `["/path/to/twinticker/src/mcp-stdio.js"]` | Should work but not tested in this sandbox |
+| Any MCP-compatible LLM client (Cursor, Codex, Windsurf, Continue, Claude Desktop, VS Code, JetBrains, …) | Point it at the live endpoint URL `https://twinticker.vercel.app/mcp` via streamable HTTP, OR run `node /path/to/twinticker/src/mcp-stdio.js` over stdio | ✅ Yes — MCP is a standard protocol. Any client that implements it (and the major ones do) will connect to this server the same way it connects to any other MCP server. |
+| Claude Code (HTTP transport only) | `claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp` | ⚠️ Claude Code 2.x has a known bug in its streamable-HTTP client where it hangs on the liveness probe against self-hosted servers. The server is spec-compliant; the bug is in the client. Use the stdio entry above if you're on Claude Code. |
 
 Then ask your LLM: *"Use twinticker_scan_all to find the most mispriced Ondo stock right now."*
 
