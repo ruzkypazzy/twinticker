@@ -54,20 +54,67 @@ The demo page renders the full verdict card with: symbol, on-chain contract addr
 
 ---
 
-## Quick start
+## Setup
+
+Pick the path that matches your goal.
+
+### Path A — Use the hosted instance (zero setup, recommended for trying it out)
+
+The hosted endpoint is already running and free to use. No API keys, no signup, no install.
+
+**In a browser:** open https://twinticker.vercel.app and click any chip.
+
+**From a terminal:**
+```bash
+curl https://twinticker.vercel.app/api/scan/NVDA
+```
+
+**From an MCP client:** point it at `https://twinticker.vercel.app/mcp`. The server returns 3 tools (`twinticker_scan`, `twinticker_scan_all`, `twinticker_execute`). See the client setup table below.
+
+**Limits:** the hosted instance is read-mostly — you can scan as much as you want, but live swaps (the Executor) require you to self-host with your own `baw` wallet session.
+
+### Path B — Self-host (full control, including live swaps)
+
+Requirements: Node.js 22+, npm 10+.
 
 ```bash
 git clone https://github.com/ruzkypazzy/twinticker.git
 cd twinticker
 npm install
-cp .env.example .env   # add your OPENAI_API_KEY (optional — LLM rationale is skipped without one)
+cp .env.example .env
 npm test               # 5/5 smoke tests
 npm start              # http://localhost:3000
 ```
 
-Open http://localhost:3000 and click any chip. The verdict card renders in ~1 second.
+**Environment variables** (all optional, with sensible defaults):
 
-### Connect from any MCP client
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | _(unset)_ | Enables the LLM-written rationale. Without it, the verdict still works; you get a stub rationale instead. |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Any OpenAI-compatible model works (gpt-4o, claude-3-5-sonnet via proxy, ollama models, etc.). |
+| `PORT` | `3000` | HTTP port for the server. |
+| `LOG_LEVEL` | `info` | Fastify log level. `debug` for verbose. |
+| `BAW_ENABLED` | `false` | Enables the live swap Executor. Must also have `baw auth signin` run on the host. |
+| `BAW_MAX_SWAP_USDT` | `5` | Hard cap on swap size in USDT. The Agentic Wallet applies its own lower caps on top. |
+
+**Deploy to Vercel** (one-click, same as the hosted instance):
+
+1. Push the repo to GitHub
+2. Go to https://vercel.com/new and import the repo
+3. Vercel auto-detects Node.js. Add `OPENAI_API_KEY` in **Environment Variables**
+4. Click **Deploy**. Your instance is live in ~60 seconds at `<project-name>.vercel.app`
+
+To use a custom domain (e.g. `twinticker.xyz`), add it in Vercel → **Settings** → **Domains**. DNS propagation is usually <5 min.
+
+### Path C — Connect from your LLM client (works with both Path A and Path B)
+
+Add TWINTICKER as an MCP server. One command for Claude Code:
+
+```bash
+claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp
+```
+
+Or for any other client, add this config:
 
 ```json
 {
@@ -79,15 +126,40 @@ Open http://localhost:3000 and click any chip. The verdict card renders in ~1 se
 }
 ```
 
-Then ask your LLM: *"Use twinticker_scan_all to find the most mispriced Ondo stock right now."*
-
 | Client | Setup |
 |---|---|
 | Claude Code | `claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp` |
 | Claude Desktop | Settings → Developer → Edit Config → paste the JSON above |
 | Cursor | `.cursor/mcp.json` in your project root → paste the JSON above |
 | Codex CLI | `codex mcp add twinticker --url https://twinticker.vercel.app/mcp` |
-| VS Code | Chat → MCP Servers → Add → HTTP → URL above → name: `twinticker` |
+| VS Code | Chat → MCP Servers → Add → HTTP → URL above, name `twinticker` |
+| Any MCP client | Streamable HTTP at `POST <your-instance>/mcp` |
+| Fallback for strict stdio clients | `claude mcp add twinticker -- npx -y mcp-remote https://twinticker.vercel.app/mcp` (proxies HTTP → stdio via `mcp-remote`) |
+
+Then ask your LLM: *"Use twinticker_scan_all to find the most mispriced Ondo stock right now."*
+
+### Path D — Fork and customize
+
+The architecture is intentionally small — 3 agents, ~600 lines of code total. To build your own variant:
+
+```bash
+git clone https://github.com/ruzkypazzy/twinticker.git my-ticker-watcher
+cd my-ticker-watcher
+npm install
+```
+
+**What to edit for what:**
+
+| You want to... | Edit this file |
+|---|---|
+| Add or change on-chain data sources | `src/agents/reader.js` — add new skill calls alongside the existing `fetchOndoDynamic()` |
+| Change the verdict logic (thresholds, new verdicts) | `src/agents/analyzer.js` — `computeVerdict()` is ~20 lines of math |
+| Use a different wallet / DEX for execution | `src/agents/executor.js` — replace the `baw` calls with your own |
+| Add new MCP tools | `src/server.js` — add to both `tools/list` and `tools/call` |
+| Change the demo page UI | `public/index.html` — single self-contained HTML file, no build step |
+| Use a different LLM (Claude, MiniMax, local Ollama) | Set `OPENAI_BASE_URL` + `OPENAI_API_KEY` in `.env` — anything OpenAI-compatible works |
+
+Then test with `npm test` (5/5) and run with `npm start`.
 
 ---
 
