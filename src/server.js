@@ -34,6 +34,36 @@ fastify.get('/', async (req, reply) => {
 
 fastify.get('/health', async () => ({ ok: true, name: 'twinticker', time: new Date().toISOString() }));
 
+// Human-readable info page for browser visits to /mcp (so people get
+// something useful instead of "Not Found"). The MCP endpoint itself is
+// POST-only — this is just a courtesy.
+fastify.get('/mcp', async (req, reply) => {
+  reply.type('text/plain').send(`TWINTICKER MCP endpoint
+
+This is a streamable-HTTP MCP server. Send a JSON-RPC POST request to use it.
+
+Server info:
+  name:        twinticker
+  version:     0.1.0
+  protocol:    2024-11-05
+  transport:   streamable-http
+
+Try it with curl:
+
+  curl -X POST https://twinticker.vercel.app/mcp \\
+    -H "Content-Type: application/json" \\
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+Connect from an MCP client:
+
+  {
+    "mcpServers": {
+      "twinticker": { "url": "https://twinticker.vercel.app/mcp" }
+    }
+  }
+`);
+});
+
 // REST: scan a single symbol — returns the verdict card
 fastify.get('/api/scan/:symbol', async (req, reply) => {
   const { symbol } = req.params;
@@ -60,12 +90,29 @@ fastify.get('/api/scan-all', async (req, reply) => {
 
 // MCP server endpoint (streamable HTTP transport)
 fastify.post('/mcp', async (req, reply) => {
-  // Minimal MCP streamable HTTP handler. We expose two tools: scan and scan_all.
+  // Accept the request even if the body is empty (clients use this as a liveness
+  // probe) and even if there's no id (notifications have no id).
   const { jsonrpc, id, method, params } = req.body || {};
 
-  if (jsonrpc !== '2.0' || !id) {
+  // If the body is empty, just ack — useful for liveness probes.
+  if (!req.body || Object.keys(req.body).length === 0) {
+    reply.code(204);
+    return;
+  }
+
+  if (jsonrpc !== '2.0') {
     reply.code(400);
-    return { error: 'invalid_jsonrpc' };
+    return { jsonrpc: '2.0', error: { code: -32600, message: 'invalid_jsonrpc' } };
+  }
+
+  // Notifications (no id, no response expected)
+  if (!id) {
+    if (method === 'notifications/initialized' || method?.startsWith('notifications/')) {
+      reply.code(204);
+      return;
+    }
+    reply.code(400);
+    return { jsonrpc: '2.0', error: { code: -32600, message: 'notification without method' } };
   }
 
   if (method === 'initialize') {
