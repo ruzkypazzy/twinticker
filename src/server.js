@@ -140,20 +140,23 @@ fastify.get('/api/scan-all', async (req, reply) => {
 });
 
 // ============================================================================
-// Bridge to the VPS-hosted Binance Agentic Wallet (baw) instance.
+// (Optional, operator-only) Bridge to a VPS-hosted Binance Agentic Wallet.
 //
-// The Vercel-hosted site is a serverless function. It cannot run the
-// `baw` CLI directly (it holds a wallet key and requires a long-running
-// process). Instead, the site calls into a tiny Fastify bridge that
-// lives on the user's VPS (185.2.101.34) and is exposed to the public
-// internet via a Cloudflare quick-tunnel.
+// The hosted site is read-only by design — no wallet, no signing, no
+// broadcast. If a TWINTICKER operator (e.g. the hackathon author) wants
+// to demo a live execute from a recording, they can stand up a small
+// bridge on their own VPS and wire these env vars:
 //
-// URLs:
-//   TT_BAW_BRIDGE_URL  — e.g. https://<random>.trycloudflare.com
-//   TT_BAW_BRIDGE_SECRET — shared secret for the X-TT-Secret header
+//   TT_BAW_BRIDGE_URL      — https://<tunnel>.trycloudflare.com
+//   TT_BAW_BRIDGE_SECRET   — random hex string matching the bridge
 //
-// The browser hits Vercel's /api/quote and /api/execute, which
-// forward to the bridge. The secret never leaves the server.
+// When both env vars are set, the Vercel side will route the three
+// /api/bridge/* routes through to the operator's bridge. The browser
+// never sees the secret — Vercel forwards the X-TT-Secret header itself.
+//
+// This is NOT used by the public site. The README documents this as
+// an operator-mode for recording a demo video. End users always run
+// the stdio MCP shim locally with their own baw installation.
 // ============================================================================
 
 const BAW_BRIDGE = process.env.TT_BAW_BRIDGE_URL || '';
@@ -161,7 +164,7 @@ const BAW_SECRET = process.env.TT_BAW_BRIDGE_SECRET || '';
 
 async function callBawBridge(path, init = {}) {
   if (!BAW_BRIDGE) {
-    return { ok: false, error: 'BAW bridge not configured (set TT_BAW_BRIDGE_URL on the host)' };
+    return { ok: false, error: 'bridge not configured (set TT_BAW_BRIDGE_URL on the host)' };
   }
   const headers = { ...(init.headers || {}), 'x-tt-secret': BAW_SECRET };
   const res = await fetch(BAW_BRIDGE + path, { ...init, headers });
@@ -174,40 +177,8 @@ async function callBawBridge(path, init = {}) {
 }
 
 fastify.get('/api/bridge/health', async (req, reply) => {
-  if (!BAW_BRIDGE) {
-    reply.code(503);
-    return { ok: false, error: 'BAW bridge not configured' };
-  }
+  if (!BAW_BRIDGE) return { ok: false, error: 'not configured' };
   return await callBawBridge('/health');
-});
-
-// GET /api/quote?fromToken=<addr>&toToken=<addr>&fromTokenQty=<usdt>
-fastify.get('/api/quote', async (req, reply) => {
-  const { fromToken, toToken, fromTokenQty } = req.query;
-  if (!fromToken || !toToken || !fromTokenQty) {
-    reply.code(400);
-    return { ok: false, error: 'fromToken, toToken, fromTokenQty required' };
-  }
-  const qs = new URLSearchParams({ fromToken, toToken, fromTokenQty: String(fromTokenQty) });
-  return await callBawBridge('/quote?' + qs.toString());
-});
-
-// POST /api/execute  body: { fromToken, toToken, fromTokenQty, slippage?, mev?, gasLevel? }
-fastify.post('/api/execute', async (req, reply) => {
-  if (!BAW_BRIDGE) {
-    reply.code(503);
-    return { ok: false, error: 'BAW bridge not configured' };
-  }
-  const body = req.body || {};
-  if (!body.fromToken || !body.toToken || !body.fromTokenQty) {
-    reply.code(400);
-    return { ok: false, error: 'fromToken, toToken, fromTokenQty required' };
-  }
-  return await callBawBridge('/execute', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
 });
 
 // MCP server endpoint (streamable HTTP transport)

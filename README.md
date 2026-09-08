@@ -241,6 +241,54 @@ Then test with `npm test` (5/5) and run with `npm start`.
 
 ---
 
+## Operator mode (recording a live demo)
+
+> **For the TWINTICKER author only** — not used by the public site.
+> The hosted Vercel app is read-only. If you're recording a demo video
+> and want to show a real swap going through, run the optional
+> `baw` bridge on your own VPS. The browser never sees the secret —
+> the Vercel side injects it as an `X-TT-Secret` header when proxying
+> `/api/bridge/*` calls to your tunnel.
+
+```bash
+# 1. On your VPS, install the wallet CLI
+npm install -g @binance/agentic-wallet
+
+# 2. Pair with your Agentic Wallet
+baw auth signin --json
+# open the returned urlForWeb in the Binance app and confirm
+
+# 3. Fund the Agentic sub-account with a small amount of USDT on BSC
+#    (Binance app → Wallets → Transfer to Agentic sub-account → USDT / BSC)
+
+# 4. Stand up the bridge
+git clone https://github.com/ruzkypazzy/twinticker
+cd twinticker
+cp deploy/vps-baw-server.mjs /opt/twinticker-bridge/server.mjs
+cd /opt/twinticker-bridge
+npm install fastify
+TT_BRIDGE_SECRET=$(openssl rand -hex 32) nohup node server.mjs &
+
+# 5. Expose it via Cloudflare (free, no port forwarding needed)
+npx cloudflared tunnel --url http://127.0.0.1:8088 --no-autoupdate &
+# copy the printed https://<random>.trycloudflare.com URL
+
+# 6. On Vercel, set the two env vars
+vercel env add TT_BAW_BRIDGE_URL    production   # paste the trycloudflare URL
+vercel env add TT_BAW_BRIDGE_SECRET production   # paste the same secret
+vercel --prod
+
+# 7. Hit /api/bridge/health to confirm
+curl https://twinticker.vercel.app/api/bridge/health
+```
+
+The bridge hard-caps swaps at $5 USDT as a defense-in-depth. You raise
+the cap by editing `BAW_MAX_SWAP_USDT` in the executor source. **You
+still confirm every tx in the Binance app on your phone** — the bridge
+doesn't bypass that.
+
+---
+
 ## Architecture
 
 ```
