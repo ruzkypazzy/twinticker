@@ -7,6 +7,8 @@
 <meta name="description" content="TWINTICKER detects divergence between Ondo tokenized US stocks on BNB Chain and their underlying US equity prices. Built on Binance Agent OS." />
 <meta property="og:title" content="TWINTICKER — Two tickers, one truth" />
 <meta property="og:description" content="AI agent that watches Ondo tokenized US stocks on BNB Chain vs the underlying equity. Built for the Binance Agent OS Mini Hackathon." />
+<meta property="og:image" content="/logo-hero.jpg" />
+<link rel="icon" type="image/jpeg" href="/logo-favicon.jpg" />
 <style>
   :root {
     --bg: #0a0e1a;
@@ -34,10 +36,17 @@
   }
   .brand { display: flex; align-items: center; gap: 12px; }
   .logo {
-    width: 36px; height: 36px; border-radius: 8px;
+    width: 48px; height: 48px; border-radius: 8px;
     background: linear-gradient(135deg, var(--accent) 0%, #d4951a 100%);
     display: grid; place-items: center; font-weight: 800; color: #0a0e1a;
     font-size: 18px; letter-spacing: -1px;
+    object-fit: cover;
+    box-shadow: 0 2px 12px rgba(240, 185, 11, 0.25);
+  }
+  .hero-logo {
+    width: 320px; max-width: 80%; height: auto; margin: 0 auto 32px;
+    display: block; border-radius: 16px;
+    box-shadow: 0 12px 60px rgba(240, 185, 11, 0.2), 0 0 0 1px rgba(240, 185, 11, 0.1);
   }
   h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
   .tag { color: var(--muted); font-size: 13px; }
@@ -132,7 +141,7 @@
 <body>
 <header>
   <div class="brand">
-    <div class="logo">TT</div>
+    <img class="logo" src="/logo-header.jpg" alt="TWINTICKER" />
     <div>
       <h1>TWINTICKER</h1>
       <div class="tag">Two tickers, one truth.</div>
@@ -144,6 +153,7 @@
 </header>
 <main>
   <div class="hero">
+    <img class="hero-logo" src="/logo-hero.jpg" alt="TWINTICKER — twin ticker streams converging on a crystal" />
     <h2>Watch Ondo tokenized US stocks.<br />On BNB Chain. Live.</h2>
     <p>Detects divergence between on-chain tokenized equities and the underlying US stocks. Powered by <code>binance-tokenized-securities-info</code> + live US equity feed + GPT-4o-mini.</p>
   </div>
