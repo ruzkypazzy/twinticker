@@ -80,19 +80,27 @@ Connect from an MCP client:
 });
 
 // OAuth 2.0 Authorization Server Metadata endpoint (RFC 8414). TWINTICKER
-// does not require auth, but some MCP clients (mcp-remote, Claude Code)
-// probe this endpoint first and bail if it's missing. We advertise a
-// minimal valid metadata that signals "no auth needed".
+// does not require auth. Some MCP clients (mcp-remote, Claude Code) probe
+// this endpoint before connecting and will fail if it's missing. We return
+// a minimal metadata document that advertises only the "none" auth flow
+// so clients that strictly require OAuth discovery will skip the flow
+// entirely and proceed with the unauthenticated MCP request.
 fastify.get('/.well-known/oauth-authorization-server', async (req, reply) => {
   reply.type('application/json').send({
     issuer: 'https://twinticker.vercel.app',
-    authorization_endpoint: 'https://twinticker.vercel.app/oauth/authorize',
-    token_endpoint: 'https://twinticker.vercel.app/oauth/token',
+    authorization_endpoint: 'https://twinticker.vercel.app/.well-known/no-auth',
+    token_endpoint: 'https://twinticker.vercel.app/.well-known/no-auth',
     response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
-    code_challenge_methods_supported: ['S256'],
+    grant_types_supported: ['none'],
+    code_challenge_methods_supported: [],
     token_endpoint_auth_methods_supported: ['none'],
   });
+});
+
+// Catch-all for OAuth endpoints to prevent the client from hanging on a 404.
+// These return 200 with a JSON body that signals "no auth required".
+fastify.all('/.well-known/no-auth', async (req, reply) => {
+  reply.type('application/json').send({ ok: true, no_auth_required: true });
 });
 
 // REST: scan a single symbol — returns the verdict card
