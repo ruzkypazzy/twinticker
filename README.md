@@ -126,15 +126,16 @@ Or for any other client, add this config:
 }
 ```
 
-| Client | Setup |
-|---|---|
-| Claude Code | `claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp` |
-| Claude Desktop | Settings → Developer → Edit Config → paste the JSON above |
-| Cursor | `.cursor/mcp.json` in your project root → paste the JSON above |
-| Codex CLI | `codex mcp add twinticker --url https://twinticker.vercel.app/mcp` |
-| VS Code | Chat → MCP Servers → Add → HTTP → URL above, name `twinticker` |
-| Any MCP client | Streamable HTTP at `POST <your-instance>/mcp` |
-| Fallback for strict stdio clients | `claude mcp add twinticker -- npx -y mcp-remote https://twinticker.vercel.app/mcp` (proxies HTTP → stdio via `mcp-remote`) |
+| Client | Setup | Verified by the project? |
+|---|---|---|
+| `curl` / any HTTP client | `POST https://twinticker.vercel.app/mcp` with JSON-RPC body | ✅ Yes — `tools/list`, `tools/call` (twinticker_scan), `tools/call` (twinticker_scan_all), and `tools/call` (twinticker_execute dry-run) all return correct responses |
+| MCP Inspector | `npx @modelcontextprotocol/inspector https://twinticker.vercel.app/mcp` | ⚠️ The MCP `initialize` handshake works against the Inspector's request shape, but the Inspector itself has not been run end-to-end. It uses the same streamable-HTTP transport as curl so it should work; please file an issue if it doesn't. |
+| Claude Code | `claude mcp add twinticker --transport http https://twinticker.vercel.app/mcp` | ⚠️ Tested on Claude Code 2.1.263 — the MCP server's handshake response is spec-compliant, but Claude Code's client reports "connection timed out after 30000s" on its liveness probe. Root cause is in the client, not the server. |
+| Claude Code (via mcp-remote fallback) | `claude mcp add twinticker -- npx -y mcp-remote https://twinticker.vercel.app/mcp` | ⚠️ Not yet tested. `mcp-remote` is the standard workaround for streamable-HTTP quirks in Claude Code and should work. |
+| Claude Desktop | Settings → Developer → Edit Config → paste the JSON above | ❌ Not tested (no desktop environment in this sandbox) |
+| Cursor | `.cursor/mcp.json` in your project root → paste the JSON above | ❌ Not tested |
+| Codex CLI | `codex mcp add twinticker --url https://twinticker.vercel.app/mcp` | ❌ Not tested |
+| VS Code | Chat → MCP Servers → Add → HTTP → URL above, name `twinticker` | ❌ Not tested |
 
 Then ask your LLM: *"Use twinticker_scan_all to find the most mispriced Ondo stock right now."*
 
