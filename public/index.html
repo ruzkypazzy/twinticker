@@ -132,6 +132,12 @@
   .stack { font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
   .err { color: var(--danger); }
   code { background: var(--panel2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  details { margin-bottom: 0; }
+  details summary { list-style: none; cursor: pointer; user-select: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "▸"; color: var(--muted); margin-right: 8px; display: inline-block; transition: transform 0.15s; }
+  details[open] summary::before { transform: rotate(90deg); color: var(--accent); }
+  details[open] summary { color: var(--accent); margin-bottom: 4px; }
   @media (max-width: 640px) {
     .verdict { grid-template-columns: 1fr; }
     .hero h2 { font-size: 32px; }
@@ -154,8 +160,8 @@
 <main>
   <div class="hero">
     <img class="hero-logo" src="/logo-hero.jpg" alt="TWINTICKER — twin ticker streams converging on a crystal" />
-    <h2>Watch Ondo tokenized US stocks.<br />On BNB Chain. Live.</h2>
-    <p>Detects divergence between on-chain tokenized equities and the underlying US stocks. Powered by <code>binance-tokenized-securities-info</code> + live US equity feed + GPT-4o-mini.</p>
+    <h2>Two tickers, one truth.</h2>
+    <p>TWINTICKER is an AI agent on <b>Binance Agent OS</b> that watches Ondo-tokenized US stocks on BNB Chain and compares them to the underlying US equity in real time. It flags divergence, names the cause, and — with your own Agentic Wallet — can swap into the mispriced side. Read-only hosted demo, deterministic verdicts, 444 tokens covered.</p>
   </div>
 
   <div class="panel">
@@ -183,6 +189,218 @@
   <div class="panel" id="all-panel" style="display:none">
     <h3 style="margin-top:0">All tokenized US stocks — ranked by divergence</h3>
     <div class="grid-results" id="all-grid"></div>
+  </div>
+
+  <div class="panel" id="about">
+    <h3 style="margin-top:0">What TWINTICKER is</h3>
+    <p style="color:var(--text); line-height:1.7; font-size:15px; margin: 0 0 12px">
+      TWINTICKER is an AI agent on <b>Binance Agent OS</b> that watches Ondo-tokenized US
+      stocks on BNB Chain and compares them to the underlying US equity in real time. When
+      the on-chain price drifts away from the equity, TWINTICKER names the cause, scores the
+      edge, and — with your own Agentic Wallet — can swap into the mispriced side.
+    </p>
+    <p style="color:var(--muted); line-height:1.7; font-size:14px; margin: 0 0 12px">
+      It runs three small agents: a <b>Reader</b> that pulls live on-chain data and the
+      underlying equity price from the official <code>binance-tokenized-securities-info</code>
+      REST API, an <b>Analyzer</b> that applies the Ondo <code>sharesMultiplier</code> and
+      emits a deterministic verdict (FAIR_VALUE / UNDERVALUED / OVERVALUED / HALTED), and a
+      <b>Scanner</b> that runs the whole pipeline across the full Ondo universe and ranks
+      by absolute divergence. The LLM is called once, after the verdict, to write a
+      one-paragraph rationale from numbers it didn't generate.
+    </p>
+    <p style="color:var(--muted); line-height:1.7; font-size:14px; margin: 0">
+      Built as a Model Context Protocol (MCP) server, the same agent is reachable from
+      Claude Code, Codex, Cursor, Windsurf, and any other MCP-compatible client. Execution
+      is opt-in and uses your own Agentic Wallet — the hosted site never holds keys.
+    </p>
+  </div>
+
+  <div class="panel" id="problem">
+    <h3 style="margin-top:0">The problem it tackles</h3>
+    <p style="color:var(--text); line-height:1.7; font-size:15px; margin: 0 0 12px">
+      Ondo's Global Markets tokens on BNB Chain are designed to track the underlying US
+      equity 1:1. In practice the link breaks in four ways that an unwary trader misses.
+    </p>
+    <ul style="color:var(--muted); line-height:1.7; font-size:14px; margin: 0; padding-left: 20px">
+      <li style="margin-bottom: 8px">
+        <b style="color:var(--text)">Stale oracle after the bell.</b>
+        The US market closes at 4 PM ET. For the next 16+ hours, the on-chain price
+        is fixed at the last close while the underlying equity is in after-hours /
+        pre-market trading. The "premium" you see is just a clock skew, not an edge.
+      </li>
+      <li style="margin-bottom: 8px">
+        <b style="color:var(--text)">Corporate actions that don't propagate on-chain.</b>
+        Earnings halts, dividend declarations, splits, M&amp;A — the tokenized wrapper
+        may not refresh at the same instant. The Binance <code>reasonCode</code> field
+        carries the truth; most dashboards ignore it.
+      </li>
+      <li style="margin-bottom: 8px">
+        <b style="color:var(--text)">Multiplier drift.</b>
+        Ondo's <code>sharesMultiplier</code> is meant to absorb splits and dividends.
+        If the on-chain value diverges from the reference price by more than a few bps
+        after the multiplier is applied, something is wrong.
+      </li>
+      <li style="margin-bottom: 8px">
+        <b style="color:var(--text)">Hand-wave rationales from black-box agents.</b>
+        Most "AI agents" in this space give you a number with no provenance. TWINTICKER
+        shows every input — the contract address, the observed on-chain price, the
+        reference equity price, the multiplier, the raw divergence in basis points —
+        so you can audit the verdict yourself.
+      </li>
+    </ul>
+  </div>
+
+  <div class="panel" id="use-cases">
+    <h3 style="margin-top:0">Use cases</h3>
+    <div class="grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 4px">
+      <div>
+        <p style="color: var(--text); font-size: 14px; line-height: 1.6; margin: 0 0 6px"><b>1. End-of-day audit for RWA holders</b></p>
+        <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
+          If you hold NVDAon, AAPLon, TSLAon — or any of the 444 Ondo Global Markets
+          tokens — and want to know <i>right now</i> whether the wrapper is tracking
+          the underlying, the <code>twinticker_scan</code> tool gives you the verdict
+          in one call.
+        </p>
+      </div>
+      <div>
+        <p style="color: var(--text); font-size: 14px; line-height: 1.6; margin: 0 0 6px"><b>2. Trading-agent signal feed</b></p>
+        <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
+          Point any MCP-capable trading agent at
+          <code>https://twinticker.vercel.app/mcp</code> and it gets a clean
+          <code>UNDERVALUED / OVERVALUED / HALTED</code> signal on every Ondo token,
+          refreshed every few seconds.
+        </p>
+      </div>
+      <div>
+        <p style="color: var(--text); font-size: 14px; line-height: 1.6; margin: 0 0 6px"><b>3. Corporate-action monitor</b></p>
+        <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
+          Around earnings, splits, dividends, and M&amp;A announcements, the
+          <code>marketStatus.reasonCode</code> from Binance flips to
+          <code>EARNINGS_HALT</code>, <code>SPLIT_HALT</code>, <code>DIVIDEND_HALT</code>,
+          or <code>MAINTENANCE</code>. TWINTICKER surfaces this in every verdict and
+          refuses to recommend action during a halt.
+        </p>
+      </div>
+      <div>
+        <p style="color: var(--text); font-size: 14px; line-height: 1.6; margin: 0 0 6px"><b>4. Liquidity-provider / market-maker backstop</b></p>
+        <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0">
+          If you quote two-sided liquidity on PancakeSwap for one of these tokens, you
+          need to know when the on-chain price has drifted from fair value so you can
+          widen your quote. A <code>scan_all</code> call gives you the full ranked list
+          in one round trip.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="faq">
+    <h3 style="margin-top:0">FAQ</h3>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Is this live trading?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        The hosted site is <b>read-only</b>: scan, scan-all, and a structured verdict card.
+        No keys, no signing, no broadcast. To actually swap, you install the stdio MCP
+        shim locally and pair your own Agentic Wallet — the swap is then confirmed in
+        the Binance app on your phone before broadcast.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Where does the data come from?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        On-chain price and US equity price both come from the official
+        <code>binance-tokenized-securities-info</code> REST API — the same data source
+        that powers the on-chain view in the Binance app. The <code>sharesMultiplier</code>
+        and <code>reasonCode</code> are read from the same response, so the verdict
+        accounts for corporate actions in one place.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Is the verdict from the LLM or from math?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        The verdict is <b>deterministic</b>. The 20-line function that decides
+        <code>FAIR_VALUE / UNDERVALUED / OVERVALUED / HALTED</code> runs the same on the
+        same input. The LLM is called once, after the verdict, to write a one-paragraph
+        rationale from numbers it didn't generate. Two scans over the same data return
+        the same verdict and a near-identical rationale.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Can an LLM talk its way past the verdict?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        No. The LLM is called in read-only mode (no tool access). It returns text that
+        the page renders below the deterministic verdict. The verdict itself is computed
+        before the LLM is invoked. There is no code path by which the LLM's output
+        changes the recommendation.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">What does HALTED mean?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        Binance's <code>reasonCode</code> is one of <code>EARNINGS_HALT</code>,
+        <code>SPLIT_HALT</code>, <code>DIVIDEND_HALT</code>, <code>MAINTENANCE</code>,
+        or <code>MERGER_HALT</code>. The on-chain wrapper is in a known non-trading
+        state. TWINTICKER surfaces this and refuses to recommend action until the
+        state clears.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">How is the swap size capped?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        The executor hard-caps each swap at 5 USDT (the <code>BAW_MAX_SWAP_USDT</code>
+        env var). Both the Vercel-side bridge and the local <code>baw</code> CLI
+        independently enforce this. To raise the cap, edit the constant in
+        <code>src/agents/executor.js</code>.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Does the site ever see my private key?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        No. The hosted Vercel deployment has no wallet code paths. Even with the
+        optional VPS bridge set up, the key is held by the <code>baw</code> CLI on
+        your own machine, never transmitted to Vercel or to the browser. The
+        <code>baw</code> CLI calls Binance directly.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">What about the off-hours "drift" I see on every scan?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        When the US market is closed, the on-chain wrapper stays at the last close.
+        The underlying equity is in after-hours / pre-market. The verdict is still
+        <code>FAIR_VALUE</code> if the divergence is small, because the wrapper is
+        behaving as designed. <code>TWINTICKER</code> reports the raw divergence
+        either way; the verdict just doesn't fire on it. The Binance
+        <code>offhours</code> field is included in every response for transparency.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">What's the latency?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        A single <code>scan</code> against the live API: ~1.2 s end-to-end (network to
+        Binance + verdict + LLM rationale). A full <code>scan_all</code> across the 444
+        tokens: ~10 s on cold start, then memoized. The MCP handshake completes in
+        under 300 ms against the official SDK.
+      </p>
+    </details>
+
+    <details style="border-top: 1px solid var(--border); padding: 12px 0 0">
+      <summary style="cursor:pointer; color: var(--text); font-weight: 600; font-size: 14px">Can I run this myself?</summary>
+      <p style="color: var(--muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0">
+        Yes. <code>git clone https://github.com/ruzkypazzy/twinticker</code>,
+        <code>npm install</code>, <code>npm start</code> — it runs locally on Node 22
+        with no Vercel, no cloud account, no API keys. To enable live execution,
+        install <code>baw</code>, pair your wallet, set <code>BAW_ENABLED=true</code>.
+        See the README for the four setup paths.
+      </p>
+    </details>
   </div>
 
   <div class="panel">
