@@ -3,14 +3,9 @@
 > **Two tickers, one truth.**
 > TWINTICKER is an AI agent on **Binance Agent OS** that watches Ondo tokenized US stocks on BNB Chain and compares them to the underlying US equity in real time. It flags divergence, explains why it matters, and — with user confirmation — can swap into the mispriced token via the **Binance Agentic Wallet**.
 
-**Bucket:** Data Analysis
-**Track:** A — Build an AI agent on Agent OS
-**Binance Agent OS Mini Hackathon · 2026-09-08**
-
 **Live demo:** https://twinticker.vercel.app
 **MCP endpoint:** `https://twinticker.vercel.app/mcp` (streamable HTTP, POST)
 **GitHub:** https://github.com/ruzkypazzy/twinticker
-**Author:** [@ruzkypazzy](https://github.com/ruzkypazzy)
 
 ---
 
@@ -22,9 +17,7 @@ The verdict is **deterministic**. The natural-language rationale is written by `
 
 ---
 
-## Built on Binance Agent OS — what that means here
-
-TWINTICKER is genuinely built on the Agent OS stack. No demo fallbacks, no fake numbers, no shadow APIs.
+## Built on Binance Agent OS
 
 | Component | Source | Where it's wired |
 |---|---|---|
@@ -40,7 +33,7 @@ The official Binance skill documentation is **vendored into the repo** at `skill
 
 ---
 
-## Live demo (what judges see)
+## Live demo
 
 Open https://twinticker.vercel.app. You'll see a scan UI that runs against the real Binance RWA API. As of right now:
 
@@ -61,7 +54,7 @@ The demo page renders the full verdict card with: symbol, on-chain contract addr
 
 ---
 
-## Quick start (run it locally in 30 seconds)
+## Quick start
 
 ```bash
 git clone https://github.com/ruzkypazzy/twinticker.git
@@ -289,31 +282,6 @@ twinticker/
 
 ---
 
-## Why Data Analysis bucket
-
-The submission form offers four buckets. TWINTICKER fits **Data Analysis** because:
-
-- It produces **structured analysis output** (the verdict card with divergence, fair value, action, confidence)
-- It enables the user to **analyse their exposure** to Ondo-tokenized US stocks
-- The example in the form — *"analyse your financial portfolio"* — describes exactly what `twinticker_scan_all` does across the 444-token Ondo universe
-- The agent's *primary* job is reporting divergence, not trading
-
-It also sits naturally in **Onchain Workflows** (because every call is a real on-chain read), but the *narrative* is data analysis: read on-chain, compare to off-chain, surface a verdict.
-
----
-
 ## License
 
 MIT — see [LICENSE](./LICENSE).
-
----
-
-## Built for the Binance Agent OS Mini Hackathon
-
-- **Bucket:** Data Analysis
-- **Track:** A
-- **Submission deadline:** 2026-09-08 23:59 UTC
-- **Author:** [@ruzkypazzy](https://github.com/ruzkypazzy)
-- **Live:** https://twinticker.vercel.app
-- **MCP:** `POST https://twinticker.vercel.app/mcp`
-- **Repo:** https://github.com/ruzkypazzy/twinticker
