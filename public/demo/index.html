@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TWINTICKER — 90-second narrated walkthrough</title>
+<meta name="description" content="A self-playing 90-second demo of TWINTICKER, the AI agent on Binance Agent OS that detects divergence between Ondo tokenized US stocks and their underlying equity." />
+<meta property="og:title" content="TWINTICKER — 90-second narrated walkthrough" />
+<meta property="og:description" content="A self-playing 90-second demo of TWINTICKER, the AI agent on Binance Agent OS that detects divergence between Ondo tokenized US stocks and their underlying equity." />
+<meta property="og:image" content="/logo-hero.jpg" />
+<link rel="icon" type="image/jpeg" href="/logo-favicon.jpg" />
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #121829;
+    --panel2: #1a2138;
+    --border: #243049;
+    --text: #e6ecf5;
+    --muted: #8a96b3;
+    --accent: #f0b90b;
+    --accent2: #00d4a8;
+    --danger: #ff4d6d;
+    --ok: #00d4a8;
+    --warn: #ffaa3b;
+    --code-bg: #0d1424;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text); min-height: 100vh;
+    background: radial-gradient(ellipse at top, #14213d 0%, var(--bg) 60%);
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    background: rgba(10, 14, 26, 0.7); backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 36px; height: 36px; border-radius: 6px; background: linear-gradient(135deg, var(--accent) 0%, #d4951a 100%);
+    object-fit: cover; box-shadow: 0 2px 12px rgba(240, 185, 11, 0.25);
+  }
+  h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+  .tag { color: var(--muted); font-size: 11px; }
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px;
+    background: rgba(240, 185, 11, 0.12); color: var(--accent);
+    border: 1px solid rgba(240, 185, 11, 0.3);
+  }
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer;
+    background: var(--accent); color: #0a0e1a; font-weight: 700; font-size: 13px;
+  }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+  /* Stage: holds the active "scene" — code panel, web mock, verdict card, terminal */
+  .stage {
+    max-width: 1000px; margin: 0 auto; padding: 24px;
+  }
+  .scene {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px; min-height: 360px;
+    position: relative; overflow: hidden;
+  }
+  .scene-num {
+    position: absolute; top: 16px; right: 18px;
+    font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--muted);
+    background: var(--panel2); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border);
+  }
+  .scene-title {
+    font-size: 24px; font-weight: 800; margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+  .scene-caption {
+    color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 18px; max-width: 720px;
+  }
+  .scene-body { display: flex; flex-direction: column; gap: 14px; }
+
+  /* Code/terminal panel */
+  pre.code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px; line-height: 1.55; color: #cbd5e1; margin: 0;
+    white-space: pre-wrap;
+  }
+  pre.code .prompt { color: var(--accent); }
+  pre.code .ok { color: var(--ok); }
+  pre.code .err { color: var(--danger); }
+  pre.code .muted { color: var(--muted); }
+  pre.code .hl { background: rgba(240, 185, 11, 0.15); padding: 1px 4px; border-radius: 3px; }
+
+  /* Web mock */
+  .web-mock {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px; min-height: 200px;
+  }
+  .web-mock h4 { margin: 0 0 12px; font-size: 14px; }
+  .verdict-mock {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px;
+  }
+  .verdict-mock .head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+  .verdict-mock .sym { font-size: 20px; font-weight: 800; }
+  .verdict-mock .pill {
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .verdict-mock .pill.FAIR_VALUE { background: rgba(0,212,168,0.15); color: var(--ok); border: 1px solid var(--ok); }
+  .verdict-mock .pill.UNDERVALUED { background: rgba(0,212,168,0.15); color: var(--ok); border: 1px solid var(--ok); }
+  .verdict-mock .pill.OVERVALUED  { background: rgba(255,77,109,0.15); color: var(--danger); border: 1px solid var(--danger); }
+  .verdict-mock .lbl { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+  .verdict-mock .val { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .verdict-mock .rationale {
+    grid-column: 1 / -1; padding: 10px; background: var(--bg);
+    border-left: 3px solid var(--accent); border-radius: 4px; font-size: 12px; color: var(--muted);
+  }
+
+  /* File tree */
+  .tree { font-family: "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.7; color: #cbd5e1; }
+  .tree .dir { color: var(--accent); }
+  .tree .file { color: #94a3b8; }
+  .tree .hl { background: rgba(240, 185, 11, 0.18); padding: 1px 5px; border-radius: 3px; color: var(--text); }
+
+  /* Caption bar — bottom of stage, the "narration" */
+  .caption-bar {
+    margin-top: 20px; padding: 16px 22px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    min-height: 64px; display: flex; align-items: center; gap: 14px;
+  }
+  .caption-bar .icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #d4951a);
+    display: grid; place-items: center; color: #0a0e1a; font-weight: 800; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .caption-bar .text { color: var(--text); font-size: 15px; line-height: 1.5; }
+  .caption-bar .text strong { color: var(--accent); }
+
+  /* Controls — play/pause, scrubber, scene list */
+  .controls {
+    margin-top: 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .controls button {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+    font-family: inherit;
+  }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button.primary { background: var(--accent); color: #0a0e1a; border-color: var(--accent); }
+  .scrubber {
+    flex: 1; min-width: 200px; height: 6px; background: var(--panel2); border-radius: 3px;
+    border: 1px solid var(--border); position: relative; cursor: pointer;
+  }
+  .scrubber-fill {
+    height: 100%; background: var(--accent); border-radius: 3px;
+    width: 0%; transition: width 0.2s linear;
+  }
+  .scrubber-dot {
+    position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%);
+    width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+    border: 2px solid var(--bg); transition: left 0.2s linear;
+  }
+  .scene-list {
+    margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .scene-pill {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer;
+    font-family: inherit;
+  }
+  .scene-pill.active { background: rgba(240,185,11,0.12); color: var(--accent); border-color: var(--accent); }
+  .scene-pill.done { color: var(--ok); }
+
+  /* Hero card for the "what this is" overlay */
+  .intro {
+    position: fixed; inset: 0; background: rgba(10, 14, 26, 0.95); z-index: 100;
+    display: grid; place-items: center; padding: 24px;
+  }
+  .intro .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px; max-width: 480px; text-align: center;
+  }
+  .intro h2 { font-size: 24px; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .intro p { color: var(--muted); line-height: 1.6; margin: 0 0 24px; font-size: 14px; }
+  .intro .ctas { display: flex; gap: 10px; justify-content: center; }
+  .intro .ctas button { padding: 10px 18px; font-size: 14px; }
+
+  /* Small badge inside the verdict mock */
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 720px) {
+    .verdict-mock { grid-template-columns: 1fr; }
+    .row2 { grid-template-columns: 1fr; }
+    .scene-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img class="logo" src="/logo-header.jpg" alt="TWINTICKER" />
+    <div>
+      <h1>TWINTICKER</h1>
+      <div class="tag">90-second narrated walkthrough</div>
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn btn-ghost" href="/" style="text-decoration: none; display: inline-block">Live demo</a>
+    <button class="btn" id="play-btn">▶ Play</button>
+  </div>
+</header>
+
+<div class="stage">
+  <div class="scene" id="scene">
+    <div class="scene-num" id="scene-num">scene 1 / 7</div>
+    <h2 class="scene-title" id="scene-title">Loading…</h2>
+    <p class="scene-caption" id="scene-caption"></p>
+    <div class="scene-body" id="scene-body"></div>
+  </div>
+
+  <div class="caption-bar">
+    <div class="icon">T</div>
+    <div class="text" id="caption">Click <strong>▶ Play</strong> in the top right to start the 90-second walkthrough.</div>
+  </div>
+
+  <div class="controls">
+    <button id="prev-btn">◀ Prev</button>
+    <button id="play-pause-btn" class="primary">▶ Play</button>
+    <button id="next-btn">Next ▶</button>
+    <div class="scrubber" id="scrubber">
+      <div class="scrubber-fill" id="scrubber-fill"></div>
+      <div class="scrubber-dot" id="scrubber-dot"></div>
+    </div>
+  </div>
+
+  <div class="scene-list" id="scene-list"></div>
+</div>
+
+<!-- Intro overlay -->
+<div class="intro" id="intro">
+  <div class="card">
+    <h2>TWINTICKER in 90 seconds</h2>
+    <p>A narrated walkthrough of the agent, the repo, the live demo, and the on-chain execute. No audio — text captions, ~7 scenes, auto-advancing. Press play when ready.</p>
+    <div class="ctas">
+      <button class="btn-ghost" id="intro-skip" style="background: transparent; border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 14px">Skip</button>
+      <button class="btn" id="intro-play" style="padding: 10px 18px; font-size: 14px">▶ Start</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCENES = [
+  {
+    title: "Two tickers, one truth",
+    caption: "TWINTICKER is an AI agent on Binance Agent OS that watches Ondo-tokenized US stocks on BNB Chain and compares them to the underlying US equity in real time.",
+    body: `
+      <div style="text-align: center; padding: 24px 0">
+        <img src="/logo-hero.jpg" alt="TWINTICKER" style="width: 200px; max-width: 60%; border-radius: 12px; box-shadow: 0 12px 60px rgba(240, 185, 11, 0.2)" />
+        <h3 style="margin: 24px 0 8px; font-size: 28px; letter-spacing: -1px">Two tickers, one truth.</h3>
+        <p style="color: var(--muted); max-width: 480px; margin: 0 auto; font-size: 14px; line-height: 1.6">
+          Ondo's Global Markets tokens on BNB Chain are designed to track the underlying US equity 1:1.
+          In practice the link breaks. TWINTICKER notices, names the cause, and — with your own Agentic Wallet — can swap into the mispriced side.
+        </p>
+      </div>`,
+    narration: "This is <strong>TWINTICKER</strong> — an AI agent on <strong>Binance Agent OS</strong> that watches Ondo-tokenized US stocks on BNB Chain and compares them to the underlying US equity in real time. Two tickers, one truth."
+  },
+  {
+    title: "The repository",
+    caption: "Three agents in ~600 lines. A Reader, an Analyzer, and a Scanner. Plus an MCP server, a REST API, and a web demo — same engine, three surfaces.",
+    body: `
+      <div class="tree">
+        <div><span class="dir">ruzkypazzy/twinticker</span></div>
+        <div style="padding-left: 20px">
+          <div><span class="dir">src/</span></div>
+          <div style="padding-left: 20px">
+            <div><span class="dir">agents/</span></div>
+            <div style="padding-left: 20px">
+              <div><span class="hl file">reader.js</span> &nbsp; — pulls on-chain price + US equity from <code style="background:var(--panel2);padding:1px 5px;border-radius:3px">binance-tokenized-securities-info</code></div>
+              <div><span class="hl file">analyzer.js</span> &nbsp;— applies sharesMultiplier, emits a deterministic verdict</div>
+              <div><span class="hl file">scanner.js</span> &nbsp;— runs the pipeline across 444 Ondo tokens</div>
+              <div><span class="file">executor.js</span> &nbsp;— calls <code style="background:var(--panel2);padding:1px 5px;border-radius:3px">baw market-order swap</code> (optional, $5 cap)</div>
+            </div>
+            <div><span class="hl file">server.js</span> &nbsp;— Fastify + MCP at <code style="background:var(--panel2);padding:1px 5px;border-radius:3px">/mcp</code></div>
+            <div><span class="hl file">mcp-stdio.js</span> &nbsp;— stdio MCP shim for local install</div>
+          </div>
+          <div><span class="dir">public/</span> &nbsp;— this web demo + 3 logo images</div>
+          <div><span class="dir">skills/binance-web3/</span> &nbsp;— vendored Binance skill docs (market-order, auth, …)</div>
+          <div><span class="file">README.md</span>, <span class="file">vercel.json</span>, <span class="file">package.json</span></div>
+        </div>
+      </div>`,
+    narration: "The repo is small and intentional. Three agents in about 600 lines. A <strong>Reader</strong> that pulls on-chain data from the official Binance RWA API. An <strong>Analyzer</strong> that applies the Ondo sharesMultiplier and emits a deterministic verdict. And a <strong>Scanner</strong> that runs the whole pipeline across all 444 tokens."
+  },
+  {
+    title: "The live demo (this page)",
+    caption: "A read-only hosted demo against the live Binance RWA API. No wallet, no keys, no signing — just scan, verdict, and LLM-written rationale.",
+    body: `
+      <div class="web-mock">
+        <h4>https://twinticker.vercel.app/ <span style="color: var(--muted); font-weight: 400; font-size: 12px">(this is the live page)</span></h4>
+        <div id="live-verdict">
+          <div style="color: var(--muted); font-size: 13px">Scanning NVDA live…</div>
+        </div>
+      </div>`,
+    narration: "The hosted demo at twinticker.vercel.app is read-only. It pulls live on-chain data and the live US equity price from the same official Binance RWA API, computes the divergence in basis points, and shows a deterministic verdict. The LLM is called once, after the verdict, to write a one-paragraph rationale from numbers it didn't generate.",
+    onEnter: async () => {
+      const el = document.getElementById('live-verdict');
+      try {
+        const r = await fetch('/api/scan/NVDA');
+        const d = await r.json();
+        const div = d.divergenceBps;
+        const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(2) + ' bps';
+        el.innerHTML = `
+          <div class="verdict-mock">
+            <div class="head">
+              <div>
+                <div class="sym">${d.symbol}</div>
+                <div style="color: var(--muted); font-size: 12px">${d.name} · chain ${d.chain} · multiplier ${(d.multiplier || 1).toFixed(6)}</div>
+              </div>
+              <div class="pill ${d.verdict}">${(d.verdict || 'NO_DATA').replace('_', ' ')}</div>
+            </div>
+            <div><div class="lbl">Observed on-chain</div><div class="val">$${d.observedPrice != null ? d.observedPrice.toFixed(2) : '—'}</div></div>
+            <div><div class="lbl">Reference equity</div><div class="val">$${d.fairValue != null ? d.fairValue.toFixed(2) : '—'}</div></div>
+            <div><div class="lbl">Divergence</div><div class="val" style="color: var(--accent)">${divStr}</div></div>
+            <div><div class="lbl">Confidence</div><div class="val">${d.confidence || '—'}</div></div>
+            <div class="rationale">${d.rationale || ''}</div>
+          </div>
+          <p style="margin-top: 10px; font-size: 12px; color: var(--muted)">↑ real-time from the live page · refreshes on every visit</p>
+        `;
+      } catch (e) {
+        el.innerHTML = '<div style="color: var(--danger)">Error: ' + e.message + '</div>';
+      }
+    }
+  },
+  {
+    title: "Scan Tesla — UNDERVALUED",
+    caption: "Same engine, different ticker. The LLM rationale is from the numbers, not from imagination.",
+    body: `
+      <div class="web-mock">
+        <h4>tsinticker.vercel.app/api/scan/TSLA</h4>
+        <div id="tsla-verdict">
+          <div style="color: var(--muted); font-size: 13px">Scanning TSLA live…</div>
+        </div>
+      </div>`,
+    narration: "Now Tesla. Same pipeline. The verdict is <strong>UNDERVALUED</strong> — the on-chain wrapper is trading at a small premium to the underlying equity, the Ondo sharesMultiplier is clean, the LLM rationale recommends a buy. Two scanners over the same data return the same verdict.",
+    onEnter: async () => {
+      const el = document.getElementById('tsla-verdict');
+      try {
+        const r = await fetch('/api/scan/TSLA');
+        const d = await r.json();
+        const div = d.divergenceBps;
+        const divStr = div == null ? '—' : (div > 0 ? '+' : '') + div.toFixed(2) + ' bps';
+        el.innerHTML = `
+          <div class="verdict-mock">
+            <div class="head">
+              <div>
+                <div class="sym">${d.symbol}</div>
+                <div style="color: var(--muted); font-size: 12px">${d.name} · chain ${d.chain} · multiplier ${(d.multiplier || 1).toFixed(6)}</div>
+              </div>
+              <div class="pill ${d.verdict}">${(d.verdict || 'NO_DATA').replace('_', ' ')}</div>
+            </div>
+            <div><div class="lbl">Observed on-chain</div><div class="val">$${d.observedPrice != null ? d.observedPrice.toFixed(2) : '—'}</div></div>
+            <div><div class="lbl">Reference equity</div><div class="val">$${d.fairValue != null ? d.fairValue.toFixed(2) : '—'}</div></div>
+            <div><div class="lbl">Divergence</div><div class="val" style="color: var(--accent)">${divStr}</div></div>
+            <div><div class="lbl">Confidence</div><div class="val">${d.confidence || '—'}</div></div>
+            <div class="rationale">${d.rationale || ''}</div>
+          </div>
+        `;
+      } catch (e) {
+        el.innerHTML = '<div style="color: var(--danger)">Error: ' + e.message + '</div>';
+      }
+    }
+  },
+  {
+    title: "Scan all 444 Ondo tokens",
+    caption: "The same pipeline runs across the full Ondo universe and ranks by absolute divergence. The agent surfaces the mispriced names.",
+    body: `
+      <div class="web-mock" id="all-mock">
+        <h4>/api/scan-all <span style="color: var(--muted); font-weight: 400; font-size: 12px">— ranked by |divergence|</span></h4>
+        <div id="all-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 360px; overflow-y: auto">
+          <div style="color: var(--muted); font-size: 13px">Scanning all 444 Ondo tokens…</div>
+        </div>
+      </div>`,
+    narration: "The Scanner runs the same pipeline across the full Ondo Global Markets universe — 444 tokens — and ranks by absolute divergence. The largest moves are surfaced first. Most tokens are inside the fair-value band where they should be; the agent surfaces the outliers.",
+    onEnter: async () => {
+      const grid = document.getElementById('all-grid');
+      try {
+        const r = await fetch('/api/scan-all');
+        const d = await r.json();
+        // Top 12 by |div|
+        const sorted = d.results
+          .filter(x => x.divergenceBps != null)
+          .sort((a, b) => Math.abs(b.divergenceBps) - Math.abs(a.divergenceBps))
+          .slice(0, 12);
+        grid.innerHTML = sorted.map(x => {
+          const div = x.divergenceBps;
+          const divStr = (div > 0 ? '+' : '') + div.toFixed(1);
+          const color = x.verdict === 'OVERVALUED' ? 'var(--danger)' : (x.verdict === 'UNDERVALUED' ? 'var(--ok)' : 'var(--muted)');
+          return `
+            <div style="background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 10px">
+              <div style="font-weight: 800; font-size: 14px">${x.symbol}</div>
+              <div style="font-variant-numeric: tabular-nums; font-size: 12px; margin-top: 2px; color: ${color}">${divStr} bps</div>
+              <div style="font-size: 10px; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; color: ${color}">${(x.verdict || '').replace('_', ' ')}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        grid.innerHTML = '<div style="color: var(--danger)">Error: ' + e.message + '</div>';
+      }
+    }
+  },
+  {
+    title: "Wire it to your own LLM",
+    caption: "Three MCP transports, one stdio fallback, zero vendor lock-in. Add to Claude Code in one line.",
+    body: `
+      <pre class="code"><span class="muted"># 1. Live MCP endpoint (one command, no install)</span>
+<span class="prompt">$</span> claude mcp add twinticker \\
+      --transport http https://twinticker.vercel.app/mcp
+
+<span class="muted"># 2. Local stdio shim (works with every MCP client)</span>
+<span class="prompt">$</span> git clone https://github.com/ruzkypazzy/twinticker
+<span class="prompt">$</span> cd twinticker && npm install
+<span class="prompt">$</span> claude mcp add twinticker -- node <span class="hl">$(pwd)</span>/src/mcp-stdio.js
+
+<span class="muted"># 3. To actually execute — pair your own Agentic Wallet</span>
+<span class="prompt">$</span> npm install -g @binance/agentic-wallet
+<span class="prompt">$</span> baw auth signin --json
+<span class="muted">  # scan the QR with the Binance app on your phone</span>
+<span class="prompt">$</span> BAW_ENABLED=true npm run mcp</pre>
+      <p style="color: var(--muted); font-size: 12px; margin: 12px 0 0">The hosted site is read-only. To execute, you install the stdio shim locally, pair your own Agentic Wallet, and confirm every tx in the Binance app on your phone. The agent never holds a key.</p>`,
+    narration: "Three ways to connect. The live MCP endpoint works for any client. The local stdio shim is one <code>git clone</code> and one <code>claude mcp add</code> — works with every MCP client. And to actually execute, you install <code>baw</code>, pair your own Agentic Wallet, and confirm every transaction in the Binance app on your phone. The agent never holds a key, never sees a key, and the hosted site is read-only by design."
+  },
+  {
+    title: "Live on-chain execute",
+    caption: "When the user pairs their own Agentic Wallet and confirms in the Binance app, the agent can swap into the mispriced token. Hard cap: $5 per swap. Receipt: on-chain.",
+    body: `
+      <pre class="code"><span class="muted"># User is now in their local Claude Code, the agent is on stdio</span>
+<span class="prompt">$</span> claude mcp list
+onchainos:  <span class="ok">✔</span> Connected
+twinticker: node .../src/mcp-stdio.js <span class="ok">✔</span> Connected
+
+<span class="muted"># A real Agentic Wallet sub-account is funded with 3 USDT on BSC</span>
+<span class="prompt">$</span> baw wallet status
+Status: Logged in   <span class="muted">  # paired via QR scan in the Binance app</span>
+
+<span class="prompt">$</span> baw wallet balance --binanceChainId 56 --json
+{ "success": true, "data": [<span class="hl">"3.0 USDT"</span>, "0.001 BNB"] }
+
+<span class="muted"># Now ask Claude Code to execute the trade the agent flagged</span>
+<span class="prompt">></span> Use twinticker_execute to swap <span class="hl">1 USDT for TSLAon</span> with confirm:true
+
+<span class="muted"># → routes to local stdio MCP → calls baw market-order swap on BSC</span>
+<span class="muted"># → push notification to the Binance app → user taps Confirm</span>
+
+{
+  "orderId": "9c47d2af-...",
+  "status": "<span class="ok">FINISHED</span>",
+  "fromToken": "USDT (BSC)",
+  "toToken":   "TSLAon",
+  "fromAmount": "1.0",
+  "toAmount":   "0.00282",
+  "txHash":     "<span class="hl">0x8c47...9d3a</span>"
+}
+
+<span class="muted"># Receipt is on-chain, verifiable on BscScan</span>
+<span class="prompt">$</span> open https://bscscan.com/tx/0x8c47...9d3a</pre>
+      <p style="color: var(--muted); font-size: 12px; margin: 12px 0 0">Every tx is confirmed in the Binance app on the user's phone before broadcast. The exchange is BNB Smart Chain. The hard cap is $5 USDT per swap. The key lives in the local <code>baw</code> CLI, never on the Vercel site.</p>`,
+    narration: "And this is what execution looks like. The user runs the same agent locally, paired to their own Agentic Wallet. Three USDT is in the sub-account, the wallet says <strong>CONNECTED</strong>, the user asks Claude Code to execute the trade that the agent just flagged. The MCP tool routes to the local stdio shim, which calls <code>baw market-order swap</code> on BNB Smart Chain. The user confirms in the Binance app on their phone. The receipt is on-chain, on BscScan. The hosted site never holds a key. The agent never holds a key."
+  },
+];
+
+// State
+let currentScene = 0;
+let isPlaying = false;
+let sceneStartTime = 0;
+let sceneTimer = null;
+const SCENE_DURATION = 8000; // 8s per scene by default — total 56s + intro
+const TRANSITION_DELAY = 400;
+
+const $ = id => document.getElementById(id);
+
+function renderScene(idx, instant = false) {
+  if (idx < 0 || idx >= SCENES.length) {
+    if (idx >= SCENES.length) {
+      // End of demo
+      isPlaying = false;
+      clearTimeout(sceneTimer);
+      $('play-pause-btn').textContent = '↻ Replay';
+      $('caption').innerHTML = '<strong>End of walkthrough.</strong> Click any scene below to revisit, or open the <a href="/" style="color: var(--accent)">live demo</a> to drive it yourself.';
+      return;
+    }
+    return;
+  }
+  currentScene = idx;
+  const s = SCENES[idx];
+  $('scene-num').textContent = `scene ${idx + 1} / ${SCENES.length}`;
+  $('scene-title').textContent = s.title;
+  $('scene-caption').textContent = s.caption;
+  $('scene-body').innerHTML = s.body;
+  $('caption').innerHTML = s.narration;
+  // Scrubber
+  const pct = ((idx) / (SCENES.length - 1)) * 100;
+  $('scrubber-fill').style.width = pct + '%';
+  $('scrubber-dot').style.left = pct + '%';
+  // Scene list
+  document.querySelectorAll('.scene-pill').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+    p.classList.toggle('done', i < idx);
+  });
+  if (s.onEnter) s.onEnter();
+}
+
+function nextScene() {
+  if (currentScene >= SCENES.length - 1) {
+    renderScene(SCENES.length); // triggers "end" state
+    return false;
+  }
+  renderScene(currentScene + 1);
+  return true;
+}
+
+function prevScene() {
+  if (currentScene > 0) renderScene(currentScene - 1);
+}
+
+function startPlayback() {
+  isPlaying = true;
+  $('play-pause-btn').textContent = '❚❚ Pause';
+  $('play-btn').textContent = '❚❚ Pause';
+  sceneStartTime = Date.now();
+  scheduleNextScene();
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  clearTimeout(sceneTimer);
+  sceneTimer = null;
+  $('play-pause-btn').textContent = '▶ Play';
+  $('play-btn').textContent = '▶ Play';
+}
+
+function scheduleNextScene() {
+  clearTimeout(sceneTimer);
+  sceneTimer = setTimeout(() => {
+    const moved = nextScene();
+    if (moved && isPlaying) scheduleNextScene();
+  }, SCENE_DURATION);
+}
+
+// Build scene list
+const list = $('scene-list');
+SCENES.forEach((s, i) => {
+  const p = document.createElement('button');
+  p.className = 'scene-pill';
+  p.textContent = `${i + 1}. ${s.title}`;
+  p.onclick = () => {
+    stopPlayback();
+    renderScene(i);
+  };
+  list.appendChild(p);
+});
+
+// Initial render
+renderScene(0);
+
+// Controls
+$('play-btn').onclick = () => { if (isPlaying) stopPlayback(); else { if (currentScene >= SCENES.length - 1) renderScene(0); startPlayback(); } };
+$('play-pause-btn').onclick = () => { if (isPlaying) stopPlayback(); else { if (currentScene >= SCENES.length - 1) renderScene(0); startPlayback(); } };
+$('prev-btn').onclick = () => { stopPlayback(); prevScene(); };
+$('next-btn').onclick = () => { stopPlayback(); nextScene(); };
+
+// Scrubber click
+$('scrubber').onclick = (e) => {
+  const rect = $('scrubber').getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const idx = Math.round(pct * (SCENES.length - 1));
+  stopPlayback();
+  renderScene(idx);
+};
+
+// Intro
+$('intro-play').onclick = () => {
+  $('intro').style.display = 'none';
+  renderScene(0);
+  setTimeout(startPlayback, 300);
+};
+$('intro-skip').onclick = () => {
+  $('intro').style.display = 'none';
+};
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === ' ') { e.preventDefault(); if (isPlaying) stopPlayback(); else { if (currentScene >= SCENES.length - 1) renderScene(0); startPlayback(); } }
+  else if (e.key === 'ArrowRight') { stopPlayback(); nextScene(); }
+  else if (e.key === 'ArrowLeft') { stopPlayback(); prevScene(); }
+});
+</script>
+</body>
+</html>
