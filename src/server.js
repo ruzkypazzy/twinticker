@@ -26,15 +26,19 @@ const fastify = Fastify({
   trustProxy: true,
 });
 
-// Ensure all /mcp responses use application/json (MCP streamable HTTP spec).
-// Otherwise some clients reject responses with content-type null.
-fastify.addHook('onSend', async (req, reply) => {
-  if (req.url === '/mcp' || req.url.startsWith('/mcp?')) {
-    const ct = reply.getHeader('content-type');
-    if (!ct || ct === 'application/octet-stream') {
-      reply.type('application/json');
-    }
-  }
+// MCP streamable HTTP spec: responses must be text/event-stream. We wrap
+// every JSON payload as a single SSE "data:" event. Clients that prefer
+// JSON will accept the SSE-shaped body because each "data: ..." line is
+// still a complete JSON-RPC message.
+fastify.addHook('onSend', async (req, reply, payload) => {
+  if (req.url !== '/mcp' && !req.url.startsWith('/mcp?')) return payload;
+  const ct = reply.getHeader('content-type') || '';
+  if (ct.startsWith('text/event-stream')) return payload;
+  if (ct.startsWith('text/plain')) return payload; // the GET /mcp info page
+  // Wrap JSON payload as SSE
+  const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  reply.type('text/event-stream');
+  return `data: ${body}\n\n`;
 });
 
 // Serve the demo page
