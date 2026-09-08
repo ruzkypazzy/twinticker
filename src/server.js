@@ -26,6 +26,17 @@ const fastify = Fastify({
   trustProxy: true,
 });
 
+// Ensure all /mcp responses use application/json (MCP streamable HTTP spec).
+// Otherwise some clients reject responses with content-type null.
+fastify.addHook('onSend', async (req, reply) => {
+  if (req.url === '/mcp' || req.url.startsWith('/mcp?')) {
+    const ct = reply.getHeader('content-type');
+    if (!ct || ct === 'application/octet-stream') {
+      reply.type('application/json');
+    }
+  }
+});
+
 // Serve the demo page
 fastify.get('/', async (req, reply) => {
   const html = readFileSync(join(__dirname, '..', 'public', 'index.html'), 'utf-8');
@@ -122,10 +133,6 @@ fastify.post('/mcp', async (req, reply) => {
         serverInfo: { name: 'twinticker', version: '0.1.0' },
       },
     };
-  }
-
-  if (method === 'notifications/initialized') {
-    return reply.code(204).send();
   }
 
   if (method === 'tools/list') {
