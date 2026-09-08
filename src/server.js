@@ -26,25 +26,19 @@ const fastify = Fastify({
   trustProxy: true,
 });
 
-// MCP streamable HTTP responses: the spec allows both application/json
-// and text/event-stream. We default to application/json (simpler, more
-// compatible with most clients). Clients that strictly require SSE can
-// negotiate by sending Accept: text/event-stream — handled below.
+// MCP streamable HTTP responses: always return text/event-stream.
+// Claude Code and mcp-remote both require SSE for the notification
+// handshake; clients that prefer JSON can still parse the SSE event
+// body (the `data: <json>\n\n` format is well-defined and easy to
+// strip). This is the most spec-compliant single response shape.
 fastify.addHook('onSend', async (req, reply, payload) => {
   if (req.url !== '/mcp' && !req.url.startsWith('/mcp?')) return payload;
   const ct = reply.getHeader('content-type') || '';
-  if (ct.startsWith('text/event-stream')) return payload;
   if (ct.startsWith('text/plain')) return payload; // the GET /mcp info page
-  // If the client asked for SSE, wrap the JSON in a single SSE event
-  const accept = req.headers.accept || '';
   const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  if (accept.includes('text/event-stream')) {
-    reply.type('text/event-stream');
-    return `data: ${body}\n\n`;
-  }
-  // Default: plain JSON
-  reply.type('application/json');
-  return body;
+  reply.type('text/event-stream');
+  reply.header('Cache-Control', 'no-cache');
+  return `data: ${body}\n\n`;
 });
 
 // Serve the demo page
@@ -85,6 +79,22 @@ Connect from an MCP client:
 `);
 });
 
+// OAuth 2.0 Authorization Server Metadata endpoint (RFC 8414). TWINTICKER
+// does not require auth, but some MCP clients (mcp-remote, Claude Code)
+// probe this endpoint first and bail if it's missing. We advertise a
+// minimal valid metadata that signals "no auth needed".
+fastify.get('/.well-known/oauth-authorization-server', async (req, reply) => {
+  reply.type('application/json').send({
+    issuer: 'https://twinticker.vercel.app',
+    authorization_endpoint: 'https://twinticker.vercel.app/oauth/authorize',
+    token_endpoint: 'https://twinticker.vercel.app/oauth/token',
+    response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code'],
+    code_challenge_methods_supported: ['S256'],
+    token_endpoint_auth_methods_supported: ['none'],
+  });
+});
+
 // REST: scan a single symbol — returns the verdict card
 fastify.get('/api/scan/:symbol', async (req, reply) => {
   const { symbol } = req.params;
@@ -116,10 +126,9 @@ fastify.post('/mcp', async (req, reply) => {
   const { jsonrpc, id, method, params } = req.body || {};
 
   // If the body is empty, just ack — useful for liveness probes.
-  // Return 202 Accepted with a JSON body so the content-type is always
-  // application/json (MCP streamable HTTP spec).
+  // Return 200 with a JSON ack so the SSE wrapper still has a body.
   if (!req.body || Object.keys(req.body).length === 0) {
-    reply.code(202);
+    reply.code(200);
     return { jsonrpc: '2.0', result: { ack: 'liveness' } };
   }
 
@@ -129,10 +138,9 @@ fastify.post('/mcp', async (req, reply) => {
   }
 
   // Notifications (no id, no response expected) — accept any of them, even
-  // liveness probes that omit the method field. Return 202 with a JSON ack
-  // so the content-type is always application/json.
+  // liveness probes that omit the method field. Return 200 with a JSON ack.
   if (!id) {
-    reply.code(202);
+    reply.code(200);
     return { jsonrpc: '2.0', result: { ack: method || 'notification' } };
   }
 
