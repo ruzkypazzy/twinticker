@@ -122,6 +122,13 @@ fastify.get('/api/scan-all', async (req, reply) => {
 
 // MCP server endpoint (streamable HTTP transport)
 fastify.post('/mcp', async (req, reply) => {
+  // If the client sent a session ID, echo it back. If this is the
+  // initialize request, generate a new session ID.
+  if (req.headers['mcp-session-id']) {
+    reply.header('mcp-session-id', req.headers['mcp-session-id']);
+  } else if (req.body && req.body.method === 'initialize' && req.body.id) {
+    reply.header('mcp-session-id', `tt-${req.body.id}-${Date.now()}`);
+  }
   // Accept the request even if the body is empty (clients use this as a liveness
   // probe) and even if there's no id (notifications have no id).
   const { jsonrpc, id, method, params } = req.body || {};
