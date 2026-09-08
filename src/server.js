@@ -105,14 +105,11 @@ fastify.post('/mcp', async (req, reply) => {
     return { jsonrpc: '2.0', error: { code: -32600, message: 'invalid_jsonrpc' } };
   }
 
-  // Notifications (no id, no response expected)
+  // Notifications (no id, no response expected) — accept any of them, even
+  // liveness probes that omit the method field.
   if (!id) {
-    if (method === 'notifications/initialized' || method?.startsWith('notifications/')) {
-      reply.code(204);
-      return;
-    }
-    reply.code(400);
-    return { jsonrpc: '2.0', error: { code: -32600, message: 'notification without method' } };
+    reply.code(204);
+    return;
   }
 
   if (method === 'initialize') {
