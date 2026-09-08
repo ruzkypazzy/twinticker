@@ -26,19 +26,25 @@ const fastify = Fastify({
   trustProxy: true,
 });
 
-// MCP streamable HTTP spec: responses must be text/event-stream. We wrap
-// every JSON payload as a single SSE "data:" event. Clients that prefer
-// JSON will accept the SSE-shaped body because each "data: ..." line is
-// still a complete JSON-RPC message.
+// MCP streamable HTTP responses: the spec allows both application/json
+// and text/event-stream. We default to application/json (simpler, more
+// compatible with most clients). Clients that strictly require SSE can
+// negotiate by sending Accept: text/event-stream — handled below.
 fastify.addHook('onSend', async (req, reply, payload) => {
   if (req.url !== '/mcp' && !req.url.startsWith('/mcp?')) return payload;
   const ct = reply.getHeader('content-type') || '';
   if (ct.startsWith('text/event-stream')) return payload;
   if (ct.startsWith('text/plain')) return payload; // the GET /mcp info page
-  // Wrap JSON payload as SSE
+  // If the client asked for SSE, wrap the JSON in a single SSE event
+  const accept = req.headers.accept || '';
   const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  reply.type('text/event-stream');
-  return `data: ${body}\n\n`;
+  if (accept.includes('text/event-stream')) {
+    reply.type('text/event-stream');
+    return `data: ${body}\n\n`;
+  }
+  // Default: plain JSON
+  reply.type('application/json');
+  return body;
 });
 
 // Serve the demo page
